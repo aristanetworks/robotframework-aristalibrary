@@ -107,22 +107,6 @@ def mlag_state_is(state,url):
     if mlagState != state:
       raise AssertionError('Incorrect Software version found')
 
-def eos_version_is(version,url):
-    """Checks if EOS software version equals specified value"""
-
-    eapi = create_rpc(url)
-
-    try:
-      result = eapi.runCmds(1, ["show version"])
-    except jsonrpclib.ProtocolError as e:
-      errorResponse = jsonrpclib.loads(jsonrpclib.history.response)
-      print "Failed:", errorResponse["error"]["data"][0]["errors"][-1]
-
-    result = result[0]
-    nodeVersion = result["version"]
-    if nodeVersion != version:
-      raise AssertionError('Incorrect Software version found')
-
 def node_env_cooling_between(min,max,url):
     """Checks if Node has cooling values between min and max"""
 
@@ -145,4 +129,3 @@ def node_env_cooling_between(min,max,url):
                                      'reported value:%s %s' %
                                      (min, max, fan["configuredSpeed"],
                                       fan["actualSpeed"]))
-

@@ -2,6 +2,8 @@ import pyeapi
 
 
 class AristaLibrary:
+    ROBOT_LIBRARY_SCOPE = 'GLOBAL'
+
     def __init__(self, proto="https", hostname='localhost',
                  username="admin", passwd="admin", port="443"):
         self.hostname = hostname
@@ -9,6 +11,7 @@ class AristaLibrary:
         self.port = port
         self.username = username
         self.passwd = passwd
+        self.conn = None
 
     def connect_to(self, proto, hostname, username, passwd, port):
         proto = str(proto)
@@ -16,9 +19,16 @@ class AristaLibrary:
         username = str(username)
         passwd = str(passwd)
         port = str(port)
-        node = pyeapi.connect(proto, hostname, username, passwd, port)
-        return node
+        self.conn = pyeapi.connect(proto, hostname, username, passwd, port)
+        return self.conn
 
-    def enable(self, conn, command):
-        return conn.execute([command])
+    def execute(self, command):
+        return self.conn.execute([command])
 
+    def clear_all_connection(self):
+        self.hostname = 'localhost'
+        self.proto = 'https'
+        self.port = '443'
+        self.username = 'admin'
+        self.passwd = 'admin'
+        self.conn = None

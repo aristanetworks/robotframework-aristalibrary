@@ -1,4 +1,5 @@
 import pyeapi
+import re
 
 
 class AristaLibrary:
@@ -21,6 +22,16 @@ class AristaLibrary:
         port = str(port)
         self.conn = pyeapi.connect(proto, hostname, username, passwd, port)
         return self.conn
+
+    def version_should_be(self, version):
+        try:
+            out = self.conn. execute(['show version'])
+        except Exception as e:
+            print e
+        version_number = str(out['result'][0]['version'])
+        if not re.search(version_number, str(version)):
+            raise AssertionError('Version did not match')
+        return True
 
     def execute(self, command):
         return self.conn.execute([command])

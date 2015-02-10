@@ -14,6 +14,7 @@ class AristaLibrary:
         self.passwd = passwd
         self.connections = dict()
         self.active = None
+        self.current_ip = ''
 
     def connect_to(self, proto, hostname, username, passwd, port):
         proto = str(proto)
@@ -27,7 +28,12 @@ class AristaLibrary:
         except Exception as e:
             print e
             return False
-        self.connections[hostname] = self.active
+        self.connections[hostname] = dict(conn=self.active,
+                                          hostname=hostname,
+                                          username=username,
+                                          passwd=passwd,
+                                          port=port)
+        self.current_ip = hostname
         return self.active
 
     def version_should_be(self, version):
@@ -38,17 +44,22 @@ class AristaLibrary:
             raise e
             return False
         if not re.search(str(version), version_number):
-            raise AssertionError('Version did not match')
+            raise AssertionError('Searched for %s, Found %s'
+                                 % (str(version), version_number))
         return True
 
-    def execute(self, command):
+    def run_cmds(self, command):
         try:
             return self.active.execute([command])
         except Exception as e:
             print e
 
     def change_to_switch(self, ip):
-        self.active = self.connections[ip]
+        self.active = self.connections[ip]['conn']
+        self.current_ip = ip
+
+    def get_switch(self):
+        return self.connections[self.current_ip]
 
     def clear_all_connection(self):
         self.hostname = 'localhost'
@@ -58,3 +69,5 @@ class AristaLibrary:
         self.passwd = 'admin'
         self.conn = []
         self.active = None
+        self.current_ip = ''
+        self.connections = dict()

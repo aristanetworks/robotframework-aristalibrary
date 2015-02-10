@@ -12,7 +12,7 @@ class AristaLibrary:
         self.port = port
         self.username = username
         self.passwd = passwd
-        self.connections = list()
+        self.connections = dict()
         self.active = None
 
     def connect_to(self, proto, hostname, username, passwd, port):
@@ -27,7 +27,7 @@ class AristaLibrary:
         except Exception as e:
             print e
             return False
-        self.connections.append(self.active)
+        self.connections[hostname] = self.active
         return self.active
 
     def version_should_be(self, version):
@@ -46,6 +46,9 @@ class AristaLibrary:
             return self.active.execute([command])
         except Exception as e:
             print e
+
+    def change_to_switch(self, ip):
+        self.active = self.connections[ip]
 
     def clear_all_connection(self):
         self.hostname = 'localhost'

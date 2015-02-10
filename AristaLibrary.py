@@ -12,7 +12,8 @@ class AristaLibrary:
         self.port = port
         self.username = username
         self.passwd = passwd
-        self.conn = None
+        self.connections = list()
+        self.active = None
 
     def connect_to(self, proto, hostname, username, passwd, port):
         proto = str(proto)
@@ -20,21 +21,31 @@ class AristaLibrary:
         username = str(username)
         passwd = str(passwd)
         port = str(port)
-        self.conn = pyeapi.connect(proto, hostname, username, passwd, port)
-        return self.conn
+        try:
+            self.active = pyeapi.connect(
+                proto, hostname, username, passwd, port)
+        except Exception as e:
+            print e
+            return False
+        self.connections.append(self.active)
+        return self.active
 
     def version_should_be(self, version):
         try:
-            out = self.conn. execute(['show version'])
+            out = self.active.execute(['show version'])
+            version_number = str(out['result'][0]['version'])
         except Exception as e:
-            print e
-        version_number = str(out['result'][0]['version'])
-        if not re.search(version_number, str(version)):
+            raise e
+            return False
+        if not re.search(str(version), version_number):
             raise AssertionError('Version did not match')
         return True
 
     def execute(self, command):
-        return self.conn.execute([command])
+        try:
+            return self.active.execute([command])
+        except Exception as e:
+            print e
 
     def clear_all_connection(self):
         self.hostname = 'localhost'
@@ -42,4 +53,5 @@ class AristaLibrary:
         self.port = '443'
         self.username = 'admin'
         self.passwd = 'admin'
-        self.conn = None
+        self.conn = []
+        self.active = None

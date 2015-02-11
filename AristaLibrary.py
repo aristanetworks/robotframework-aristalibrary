@@ -1,5 +1,6 @@
 import pyeapi
 from pyeapi.eapilib import CommandError
+from pyeapi.utils import make_iterable
 import re
 
 
@@ -55,9 +56,10 @@ class AristaLibrary:
                                  % (str(version), version_number))
         return True
 
-    def run_cmds(self, command):
+    def run_cmds(self, commands, format='json'):
         try:
-            return self.active.execute([command])
+            commands = make_iterable(commands)
+            return self.active.execute(commands, format)
         except CommandError as e:
             error = ""
             # This just added by Peter 10 Feb 2015

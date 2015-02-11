@@ -33,19 +33,30 @@ try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
+from os.path import abspath, dirname, join
 
-from AristaLibrary import __version__, __author__
+CURDIR = dirname(abspath(__file__))
+
+#from AristaLibrary import __version__, __author__
+execfile(join(CURDIR, 'AristaLibrary', 'version.py'))
+with open(join(CURDIR, 'README.md')) as readme:
+    README = readme.read()
+with open(join(CURDIR, 'requirements.txt')) as requirements:
+    INSTALL_REQUIREMENTS = requirements.read()
 
 setup(
-    name='AristaLibrary',
-    version=__version__,
+    name='robotframework-aristalibrary',
+    version=VERSION,
     description='Python Robot Framework Library for EOS devices',
-    author=__author__,
-    author_email='eosplus-dev@aristanetworks.com',
+    long_description=README,
+    author='Arista EOS+ Consulting Services',
+    author_email='eosplus-dev@arista.com',
     url='https://github.com/arista-eosplus/AristaLibrary',
-    download_url='https://github.com/arista-eosplus/AristaLibrary/tarball/%s' 
-                  % __version__,
+    download_url='https://github.com/arista-eosplus/AristaLibrary/tarball/%s' % VERSION,
     license='BSD-3',
-    packages=['AristaLibrary']
+    platforms='any',
+    keywords='robotframework testing testautomation arista eos eapi pyeapi',
+    packages=['AristaLibrary'],
+    install_requires=INSTALL_REQUIREMENTS
 )
 

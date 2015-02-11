@@ -1,0 +1,56 @@
+*.py[cod]
+
+# C extensions
+*.so
+
+# Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+var
+sdist
+develop-eggs
+.installed.cfg
+lib
+lib64
+__pycache__
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+nosetests.xml
+
+# Translations
+*.mo
+
+# Mr Developer
+.mr.developer.cfg
+.project
+.pydevproject
+
+# OSX crud
+.DS_STORE
+
+# Sphinx crud
+_build
+_static
+_templates
+
+# local environment
+.env
+
+# Dynamic RPM build files
+*.spec
+rpm/rpmbuild
+rpm/rpms
+
+# RobotFramework Files
+output.xml
+log.html
+report.html

@@ -8,8 +8,8 @@
 #	make pep8 -- pep8 checks
 #	make pyflakes -- pyflakes checks
 #	make tests -- run all of the tests
-#   make unittest -- runs the unit tests
-#   make systest -- runs the system tests
+#       make unittest -- runs the unit tests
+#       make systest -- runs the system tests
 #	make clean -- clean distutils
 #	make docs -- build docs
 #
@@ -52,3 +52,6 @@ unittest: clean
 
 systest: clean
 	$(PYTHON) -m unittest discover test/system -v
+
+docs:
+	$(PYTHON) doc/generateHTML.py

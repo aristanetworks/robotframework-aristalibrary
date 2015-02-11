@@ -39,6 +39,18 @@ import re
 
 
 class AristaLibrary:
+    """AristaLibrary - A Robot Framework Library for testing Arista EOS Devices.
+
+    The AristaLibrary has been designed to simplify the task of configuration
+    validation and verification. If you are familiar with Command-API(eAPI), you
+    know that it's already fairly easy to extract configuration data from your
+    EOS nodes, but this library seeks to make configuration validation possible
+    for those who have no programming experience.  You'll notice that this library
+    utilizes [https://github.com/arista-eosplus/pyeapi|pyeapi], which greatly
+    simplifies the retreival and analysis of EOS configuration.  We encourage
+    you to participate in the development of this library by visiting
+    [https://github.com/arista-eosplus|AristaLibrary], hosted on Github.
+    """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
     def __init__(self, transport="https", host='localhost',
@@ -54,6 +66,11 @@ class AristaLibrary:
 
     def connect_to(self, host='localhost', transport='https', port='443',
                    username='admin', password='admin'):
+
+        """This is the cornerstone of all testing against a node. The Connect To
+        keyword accepts the necessary parameters to setup an API connection to
+        your node.
+        """
         host = str(host)
         transport = str(transport)
         port = int(port)

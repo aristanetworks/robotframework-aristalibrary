@@ -1,0 +1,29 @@
+# -*- coding: robot -*-
+# :setf robot
+# :set noexpandtab
+*** Settings ***
+Library	AristaLibrary
+Suite Setup	Connect To Switch
+
+*** Variables ***
+${TRANSPORT}	https
+${PORT}	8443
+${SW1_HOST}	localhost
+${USERNAME}	vagrant
+${PASSWORD}	vagrant
+
+*** Test Cases ***
+Log Version
+	${output}=	Run Cmds	show version
+	Log To Console	"Version: ${output}"
+	Should Not Be Equal	${output}	NONE	msg="Output of 'show version' was empty"
+	#Log To Console	${output}
+
+#Check Version
+#	Version Should Be	4.14.3F
+
+*** Keywords ***
+Connect To Switch
+	${switch1}=	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password=${PASSWORD}	port=${PORT}
+	#Log To Console	"Connection to switch1: ${switch1}"
+

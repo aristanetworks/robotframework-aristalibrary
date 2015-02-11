@@ -39,7 +39,7 @@ class AristaLibrary:
         self.current_ip = host
         return self.active
 
-    def version_should_be(self, version):
+    def version_should_contain(self, version):
         try:
             out = self.active.execute(['show version'])
             version_number = str(out['result'][0]['version'])

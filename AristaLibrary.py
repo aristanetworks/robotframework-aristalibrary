@@ -1,6 +1,7 @@
 import pyeapi
 from pyeapi.eapilib import CommandError
 from pyeapi.utils import make_iterable
+from robot.api import logger
 import re
 
 
@@ -30,7 +31,7 @@ class AristaLibrary:
                 host=host, transport=transport,
                 username=username, password=password, port=port)
             self.active_node = pyeapi.client.Node(self.active)
-            self.active_node.enable(['show version'])
+            #self.active_node.enable(['show version'])
         except Exception as e:
             print e
             return False
@@ -42,6 +43,26 @@ class AristaLibrary:
                                       password=password,
                                       port=port)
         self.current_ip = host
+
+        # Always try "show version" when connecting to a node so that if
+        #  there is a configuration error, we can fail quickly.
+        try:
+            #self.active_node.enable(['show version'])
+            json = self.active.execute(['show version'])
+            ver = json['result'][0]
+            mesg = "Created connection to {}://{}:{}@{}:{}/command-api: model: {}, serial: {}, systemMAC: {}, version: {}, lastBootTime: {}".format(
+                transport, username, '****', host, port,
+                ver['modelName'], ver['serialNumber'], ver['systemMacAddress'],
+                ver['version'], ver['bootupTimestamp'])
+            logger.write(mesg, 'INFO', False)
+        except CommandError as e:
+            error = ""
+            # This just added by Peter 10 Feb 2015
+            #if self.active_node.connection.error.command_error:
+            #    error = self.active_node.connection.error.command_error
+            raise AssertionError('eAPI CommandError: {}\n{}'.format(e, error))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
         return self.active
 
     def version_should_contain(self, version):

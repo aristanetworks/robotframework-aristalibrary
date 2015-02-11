@@ -29,6 +29,7 @@ class AristaLibrary:
             print e
             return False
         self.connections[hostname] = dict(conn=self.active,
+                                          proto=proto,
                                           hostname=hostname,
                                           username=username,
                                           passwd=passwd,
@@ -59,7 +60,13 @@ class AristaLibrary:
         self.current_ip = ip
 
     def get_switch(self):
-        return self.connections[self.current_ip]
+        hostname = self.connections[self.current_ip]['hostname']
+        username = self.connections[self.current_ip]['username']
+        passwd = self.connections[self.current_ip]['passwd']
+        proto = self.connections[self.current_ip]['proto']
+        port = self.connections[self.current_ip]['port']
+        return_value = hostname, username, passwd, proto, port
+        return return_value
 
     def clear_all_connection(self):
         self.hostname = 'localhost'

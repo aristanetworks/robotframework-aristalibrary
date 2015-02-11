@@ -15,6 +15,7 @@ class AristaLibrary:
         self.password = password
         self.connections = dict()
         self.active = None
+        self.active_node = None
 
     def connect_to(self, host='localhost', transport='https', port='443',
                    username='admin', password='admin'):
@@ -27,15 +28,18 @@ class AristaLibrary:
             self.active = pyeapi.connect(
                 host=host, transport=transport,
                 username=username, password=password, port=port)
+            self.active_node = pyeapi.client.Node(self.active)
+            self.active_node.enable(['show version'])
         except Exception as e:
             print e
             return False
         self.connections[host] = dict(conn=self.active,
-                                          transport=transport,
-                                          host=host,
-                                          username=username,
-                                          password=password,
-                                          port=port)
+                                      node=self.active_node,
+                                      transport=transport,
+                                      host=host,
+                                      username=username,
+                                      password=password,
+                                      port=port)
         self.current_ip = host
         return self.active
 
@@ -55,12 +59,17 @@ class AristaLibrary:
         try:
             return self.active.execute([command])
         except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
+            error = ""
+            # This just added by Peter 10 Feb 2015
+            #if self.active_node.connection.error.command_error:
+            #    error = self.active_node.connection.error.command_error
+            raise AssertionError('eAPI CommandError: {}\n{}'.format(e, error))
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
     def change_to_switch(self, ip):
         self.active = self.connections[ip]['conn']
+        self.active_node = self.connections[ip]['node']
         self.current_ip = ip
 
     def get_switch(self):
@@ -92,5 +101,6 @@ class AristaLibrary:
         self.password = 'admin'
         self.conn = []
         self.active = None
+        self.active_node = None
         self.current_ip = ''
         self.connections = dict()

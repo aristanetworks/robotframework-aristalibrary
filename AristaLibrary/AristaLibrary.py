@@ -69,7 +69,7 @@ class AristaLibrary:
     == Connecting to a test node ==
     == Switching between connected nodes ==
     == Testing the EOS Software version ==
-    
+
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
@@ -90,6 +90,39 @@ class AristaLibrary:
         """This is the cornerstone of all testing. The Connect To
         keyword accepts the necessary parameters to setup an API connection to
         your node.
+
+        Example:
+        | Connect To | host=192.0.2.50 | transport=http | port=80 | username=myUser | password=secret |
+        | Connect To | host=192.0.2.51 | username=myUser | password=secret |
+
+        This function returns the pyeapi connection object, so you can save this
+        for later reference by doing something like this:
+
+        | ${node}= | Connect To | host=192.0.2.51 | username=myUser | password=secret |
+
+        You can confirm which interface eAPI is listening on by running:
+        | veos-node>show management api http-commands
+        | *Enabled:        Yes*
+        | *HTTPS server:   running, set to use port 443*
+        | HTTP server:    shutdown, set to use port 80
+        | VRF:            default
+        | Hits:           28
+        | Last hit:       2128 seconds ago
+        | Bytes in:       1547
+        | Bytes out:      283966
+        | Requests:       1
+        | Commands:       1
+        | Duration:       0.055 seconds
+        |    User        Hits       Bytes in       Bytes out    Last hit
+        | ----------- ---------- -------------- --------------- ----------------
+        |   admin       1          1547           283966       2128 seconds ago
+        |
+        | URLs
+        | ---------------------------------------
+        | *Management1 : https://192.0.2.50:443*
+
+        If you are new to eAPI see the Arista EOS Central article,
+        [https://eos.arista.com/arista-eapi-101|Arista eAPI 101]
         """
         host = str(host)
         transport = str(transport)

@@ -68,6 +68,18 @@ class AristaLibrary:
         return_value = hostname, username, passwd, proto, port
         return return_value
 
+    def get_switches(self):
+        return_value = list()
+        for name, values in self.connections.items():
+            hostname = values['hostname']
+            username = values['username']
+            passwd = values['passwd']
+            port = values['port']
+            proto = values['proto']
+            info = hostname, username, passwd, proto, port
+            return_value.append(info)
+        return return_value
+
     def clear_all_connection(self):
         self.hostname = 'localhost'
         self.proto = 'https'

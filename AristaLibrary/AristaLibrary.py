@@ -31,11 +31,11 @@ class AristaLibrary:
             print e
             return False
         self.connections[host] = dict(conn=self.active,
-                                          transport=transport,
-                                          host=host,
-                                          username=username,
-                                          password=password,
-                                          port=port)
+                                      transport=transport,
+                                      host=host,
+                                      username=username,
+                                      password=password,
+                                      port=port)
         self.current_ip = host
         return self.active
 

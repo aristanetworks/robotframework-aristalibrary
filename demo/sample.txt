@@ -6,21 +6,24 @@ Library	AristaLibrary
 Suite Setup	Connect To Switch
 
 *** Variables ***
-${TRANSPORT}	https
+${TRANSPORT}	http
 ${PORT}	8443
 ${SW1_HOST}	localhost
 ${USERNAME}	vagrant
 ${PASSWORD}	vagrant
 
 *** Test Cases ***
-Log Version
+Log Version Using Run Cmds
 	${output}=	Run Cmds	show version
-	Log To Console	"Version: ${output}"
+	Log	"show version returned: ${output}"
+	#Log To Console	"show version returned: ${output}"
 	Should Not Be Equal	${output}	NONE	msg="Output of 'show version' was empty"
-	#Log To Console	${output}
 
-#Check Version
-#	Version Should Be	4.14.3F
+Check Good Version Contains
+	Version Should Contain	4.14.3F
+
+Check Bad Version Contains
+	Run Keyword And Expect Error	Searched for 4.14.2F, Found 4.14.3F-2084697.4143F.1 (engineering build)	Version Should Contain	4.14.2F
 
 *** Keywords ***
 Connect To Switch

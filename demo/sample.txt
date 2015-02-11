@@ -2,8 +2,13 @@
 # :setf robot
 # :set noexpandtab
 *** Settings ***
+Documentation	This is a sample Robot Framework suite which takes advantage of the AristaLibrary
+...	for communicating with and controlling Arista switches.
+
 Library	AristaLibrary
+Library	Collections
 Suite Setup	Connect To Switch
+Suite Teardown	Clear All Connection
 
 *** Variables ***
 ${TRANSPORT}	http
@@ -14,19 +19,66 @@ ${PASSWORD}	vagrant
 
 *** Test Cases ***
 Log Version Using Run Cmds
+	[Documentation]	Test Run Cmds which executes EOS commands and returns a raw JSON dictionary.
+	...	Additionally, demonstrate several options for retrieving data out of the raw JSON.
+	[tags]	runCmds
 	${output}=	Run Cmds	show version
 	Log	"show version returned: ${output}"
-	#Log To Console	"show version returned: ${output}"
+	Should Not Be Equal	${output}	NONE	msg="Output of 'show version' was empty"
+	Dictionary Should Contain Key	${output}	result	msg="JSON from 'show version' did not contain results"
+	#${results}=	Get From Dictionary	${output}	result
+	#${result}=	Get From List	${results}	0
+	${result}=	Get From List	${output['result']}	0
+	Log	"Connected to ${result['modelName']}, SN ${result['serialNumber']}, SysMAC ${result['systemMacAddress']} running ${result['version']}"
+
+Run a list of commands
+	[Documentation]	Test Run Cmds which executes EOS commands and returns a raw JSON dictionary, this time passing a list of several commands.
+	[tags]	runCmds
+	@{commands}=	Create List	show version	show interfaces status connected
+	${output}=	Run Cmds	${commands}
+	Log	"List of commands returned: ${output}" repr=True
 	Should Not Be Equal	${output}	NONE	msg="Output of 'show version' was empty"
 
+Run Cmds With Invalid Command
+	[Documentation]	Verify that we get an appropriate error raised when sending invalid commands.
+	[tags]	runCmds
+	${err}=	Run Keyword And Expect Error	*	Run Cmds	show ver
+	Log	"'Expected ERROR was returned: ${err}"
+
 Check Good Version Contains
+	[Documentation]	Positive test for version matching.
+	[tags]	versionCheck
 	Version Should Contain	4.14.3F
 
 Check Bad Version Contains
-	Run Keyword And Expect Error	Searched for 4.14.2F, Found 4.14.3F-2084697.4143F.1 (engineering build)	Version Should Contain	4.14.2F
+	[Documentation]	Ensure a good error message is returned for a failed version check.
+	[tags]	versionCheck
+	Run Keyword And Expect Error	Searched for 4.14.2F, Found *	Version Should Contain	4.14.2F
+
+Connect To Switch With Bad Password
+	[Documentation]	Ensure useful error is raised during a failed connection setup
+	[tags]	connect
+	${err}=	Run Keyword And Expect Error	*	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password='fred'	port=${PORT}
+	#Log To Console	"Connection to switch1: ${switch1}"
+	Log	"'Expected ERROR was returned: ${err}"
+
+Connect To Switch With Bad Transport
+	[Documentation]	Ensure useful error is raised during a failed connection setup
+	[tags]	connect
+	${err}=	Run Keyword And Expect Error	*	Connect To	host=${SW1_HOST}	transport='https'	username=${USERNAME}	password=${PASSWORD}	port=${PORT}
+	#Log To Console	"Connection to switch1: ${switch1}"
+	Log	"'Expected ERROR was returned: ${err}"
+
+Connect To Switch With Bad port
+	[Documentation]	Ensure useful error is raised during a failed connection setup
+	[tags]	connect
+	${err}=	Run Keyword And Expect Error	*	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password=${PASSWORD}	port=80
+	#Log To Console	"Connection to switch1: ${switch1}"
+	Log	"'Expected ERROR was returned: ${err}"
 
 *** Keywords ***
 Connect To Switch
+	[Documentation]	Establish connection to a switch which gets used by other test cases.
 	${switch1}=	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password=${PASSWORD}	port=${PORT}
 	#Log To Console	"Connection to switch1: ${switch1}"
 

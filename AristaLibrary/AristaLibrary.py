@@ -39,6 +39,38 @@ import re
 
 
 class AristaLibrary:
+    """AristaLibrary - A Robot Framework Library for testing Arista EOS Devices.
+
+    The AristaLibrary has been designed to simplify the task of configuration
+    validation and verification. If you are familiar with Command-API(eAPI), you
+    know that it's already fairly easy to extract configuration data from your
+    EOS nodes, but this library seeks to make configuration validation possible
+    for those who have no programming experience.  You'll notice that this library
+    utilizes [https://github.com/arista-eosplus/pyeapi|pyeapi], which greatly
+    simplifies the retreival and analysis of EOS configuration.  We encourage
+    you to participate in the development of this library by visiting
+    [https://github.com/arista-eosplus|AristaLibrary], hosted on Github.
+
+    Note: This library has been built for Python only.
+
+    == Table of contents ==
+
+    - `Installing the library`
+    - `Examples`
+
+    = Installing the library =
+    You can get the AristaLibrary using PIP
+    | robotframework-aristalibrary
+
+    or install from source
+    | <add source code link here once
+
+    = Examples =
+    == Connecting to a test node ==
+    == Switching between connected nodes ==
+    == Testing the EOS Software version ==
+
+    """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
     def __init__(self, transport="https", host='localhost',
@@ -54,6 +86,47 @@ class AristaLibrary:
 
     def connect_to(self, host='localhost', transport='https', port='443',
                    username='admin', password='admin'):
+
+        """This is the cornerstone of all testing. The Connect To
+        keyword accepts the necessary parameters to setup an API connection to
+        your node.
+
+        Example:
+        | Connect To | host=192.0.2.50 | transport=http | port=80 | username=myUser | password=secret |
+        | Connect To | host=192.0.2.51 | username=myUser | password=secret |
+
+        This function returns the pyeapi connection object, so you can save this
+        for later reference by doing something like this:
+
+        | ${node}= | Connect To | host=192.0.2.51 | username=myUser | password=secret |
+
+        You can confirm which interface eAPI is listening on by running:
+        | veos-node>show management api http-commands
+        | *Enabled:        Yes*
+        | *HTTPS server:   running, set to use port 443*
+        | HTTP server:    shutdown, set to use port 80
+        | VRF:            default
+        | Hits:           28
+        | Last hit:       2128 seconds ago
+        | Bytes in:       1547
+        | Bytes out:      283966
+        | Requests:       1
+        | Commands:       1
+        | Duration:       0.055 seconds
+        |    User        Hits       Bytes in       Bytes out    Last hit
+        | ----------- ---------- -------------- --------------- ----------------
+        |   admin       1          1547           283966       2128 seconds ago
+        |
+        | URLs
+        | ---------------------------------------
+        | *Management1 : https://192.0.2.50:443*
+
+        You can confirm connectivity by firing up a browser and point it to
+        https://<my_url>:<my_port>/command-api
+
+        If you are new to eAPI see the Arista EOS Central article,
+        [https://eos.arista.com/arista-eapi-101|Arista eAPI 101]
+        """
         host = str(host)
         transport = str(transport)
         port = int(port)
@@ -99,6 +172,29 @@ class AristaLibrary:
         return self.active
 
     def version_should_contain(self, version):
+        """This keyword validates the EOS version running on your node. It is
+        flexible is that it does not require an exact match - e.g. 4.14 == 4.14.0F.
+
+        Example:
+        | Version Should Contain | 4.14.0F |
+
+        This keyword evaluates the 'Software image version' from 'Show Version'
+        Example:
+        | veos-node# show version
+        | Arista vEOS
+        | Hardware version:
+        | Serial number:
+        | System MAC address:  0011.2233.4455
+        |
+        | *Software image version: 4.14.2F*
+        | Architecture:           i386
+        | Internal build version: 4.14.2F-2083164.4142F.1
+        | Internal build ID:      19fe6cb3-1777-40b6-a4e6-53875b30658c
+        |
+        | Uptime:                 21 hours and 59 minutes
+        | Total memory:           2028804 kB
+        | Free memory:            285504 kB
+        """
         try:
             out = self.active.execute(['show version'])
             version_number = str(out['result'][0]['version'])
@@ -111,6 +207,25 @@ class AristaLibrary:
         return True
 
     def run_cmds(self, commands, format='json'):
+        """
+        The Run Cmds keyword allows you to run any eAPI command against your
+        switch and then process the output using Robot's builtin keywords.
+
+        Arguments:
+        - commands: This must be the full eAPI command and not the short form
+        that works on the CLI.
+
+        Example:
+        Good:
+        | show version
+        Bad:
+        | sho ver
+
+        - format: This is the format that the text will be returned from the API
+        request. The two options are 'text' and 'json'. Note that EOS does not
+        support a JSON response for all commands. Please refer to your EOS
+        Command API documentation for more details.
+        """
         try:
             commands = make_iterable(commands)
             return self.active.execute(commands, format)
@@ -129,6 +244,11 @@ class AristaLibrary:
         self.current_ip = ip
 
     def get_switch(self):
+        """
+        The Get Switch keyword returns information about the active switch
+        connection. Details include the host, username, password, transport and
+        port.
+        """
         host = self.connections[self.current_ip]['host']
         username = self.connections[self.current_ip]['username']
         password = self.connections[self.current_ip]['password']
@@ -138,6 +258,11 @@ class AristaLibrary:
         return return_value
 
     def get_switches(self):
+        """
+        The Get Switches keyword returns a list of all nodes that are
+        in your cache. It will return the host, username, password,
+        port, transport.
+        """
         return_value = list()
         for name, values in self.connections.items():
             host = values['host']
@@ -150,6 +275,10 @@ class AristaLibrary:
         return return_value
 
     def clear_all_connection(self):
+        """
+        This keyword removes all connection objects from the cache and resets
+        the base object to the initial state.
+        """
         self.host = 'localhost'
         self.transport = 'https'
         self.port = '443'

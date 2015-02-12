@@ -60,10 +60,10 @@ class AristaLibrary:
 
     = Installing the library =
     You can get the AristaLibrary using PIP
-    | pip install AristaLibrary
+    | robotframework-aristalibrary
 
     or install from source
-    | add code here
+    | <add source code link here once
 
     = Examples =
     == Connecting to a test node ==
@@ -121,6 +121,9 @@ class AristaLibrary:
         | ---------------------------------------
         | *Management1 : https://192.0.2.50:443*
 
+        You can confirm connectivity by firing up a browser and point it to
+        https://<my_url>:<my_port>/command-api
+
         If you are new to eAPI see the Arista EOS Central article,
         [https://eos.arista.com/arista-eapi-101|Arista eAPI 101]
         """
@@ -177,7 +180,6 @@ class AristaLibrary:
 
         This keyword evaluates the 'Software image version' from 'Show Version'
         Example:
-        ```
         | veos-node# show version
         | Arista vEOS
         | Hardware version:
@@ -192,7 +194,6 @@ class AristaLibrary:
         | Uptime:                 21 hours and 59 minutes
         | Total memory:           2028804 kB
         | Free memory:            285504 kB
-        ```
         """
         try:
             out = self.active.execute(['show version'])
@@ -206,6 +207,25 @@ class AristaLibrary:
         return True
 
     def run_cmds(self, commands, format='json'):
+        """
+        The Run Cmds keyword allows you to run any eAPI command against your
+        switch and then process the output using Robot's builtin keywords.
+
+        Arguments:
+        - commands: This must be the full eAPI command and not the short form
+        that works on the CLI.
+
+        Example:
+        Good:
+        | show version
+        Bad:
+        | sho ver
+
+        - format: This is the format that the text will be returned from the API
+        request. The two options are 'text' and 'json'. Note that EOS does not
+        support a JSON response for all commands. Please refer to your EOS
+        Command API documentation for more details.
+        """
         try:
             commands = make_iterable(commands)
             return self.active.execute(commands, format)
@@ -224,6 +244,11 @@ class AristaLibrary:
         self.current_ip = ip
 
     def get_switch(self):
+        """
+        The Get Switch keyword returns information about the active switch
+        connection. Details include the host, username, password, transport and
+        port.
+        """
         host = self.connections[self.current_ip]['host']
         username = self.connections[self.current_ip]['username']
         password = self.connections[self.current_ip]['password']
@@ -233,6 +258,11 @@ class AristaLibrary:
         return return_value
 
     def get_switches(self):
+        """
+        The Get Switches keyword returns a list of all nodes that are
+        in your cache. It will return the host, username, password,
+        port, transport.
+        """
         return_value = list()
         for name, values in self.connections.items():
             host = values['host']
@@ -245,6 +275,10 @@ class AristaLibrary:
         return return_value
 
     def clear_all_connection(self):
+        """
+        This keyword removes all connection objects from the cache and resets
+        the base object to the initial state.
+        """
         self.host = 'localhost'
         self.transport = 'https'
         self.port = '443'

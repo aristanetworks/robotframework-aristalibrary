@@ -1,5 +1,6 @@
 import pyeapi
 from pyeapi.eapilib import CommandError
+from robot.utils import ConnectionCache
 import re
 
 
@@ -7,41 +8,45 @@ class AristaLibrary:
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
     def __init__(self, transport="https", host='localhost',
-                 username="admin", password="admin", port="443"):
+                 username="admin", password="admin", port="443", alias=None):
         self.host = host
         self.transport = transport
         self.port = port
         self.username = username
         self.password = password
+        self.alias = None
         self.connections = dict()
-        self.active = None
+        self._connectiontest = ConnectionCache()
 
     def connect_to(self, host='localhost', transport='https', port='443',
-                   username='admin', password='admin'):
+                   username='admin', password='admin', alias=None):
         host = str(host)
         transport = str(transport)
         port = int(port)
         username = str(username)
         password = str(password)
+        if alias:
+            alias = str(alias)
         try:
-            self.active = pyeapi.connect(
+            client = pyeapi.connect(
                 host=host, transport=transport,
                 username=username, password=password, port=port)
+            conn_indx = self._connectiontest.register(client, alias)
         except Exception as e:
             print e
             return False
-        self.connections[host] = dict(conn=self.active,
-                                      transport=transport,
-                                      host=host,
-                                      username=username,
-                                      password=password,
-                                      port=port)
-        self.current_ip = host
-        return self.active
+        self.connections[conn_indx] = dict(conn=client,
+                                           transport=transport,
+                                           host=host,
+                                           username=username,
+                                           password=password,
+                                           port=port,
+                                           alias=alias)
+        return conn_indx
 
     def version_should_contain(self, version):
         try:
-            out = self.active.execute(['show version'])
+            out = self._connectiontest.current.execute(['show version'])
             version_number = str(out['result'][0]['version'])
         except Exception as e:
             raise e
@@ -53,23 +58,28 @@ class AristaLibrary:
 
     def run_cmds(self, command):
         try:
-            return self.active.execute([command])
+            return self._connectiontest.current.execute([command])
         except CommandError as e:
             raise AssertionError('eAPI CommandError: {}'.format(e))
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
-    def change_to_switch(self, ip):
-        self.active = self.connections[ip]['conn']
-        self.current_ip = ip
+    def change_to_switch(self, index_or_alias):
+        old_index = self._connectiontest.current_index
+        self._connectiontest.switch(index_or_alias)
+        return old_index
 
     def get_switch(self):
-        host = self.connections[self.current_ip]['host']
-        username = self.connections[self.current_ip]['username']
-        password = self.connections[self.current_ip]['password']
-        transport = self.connections[self.current_ip]['transport']
-        port = self.connections[self.current_ip]['port']
-        return_value = host, username, password, transport, port
+        host = self.connections[self._connectiontest.current_index]['host']
+        username = \
+            self.connections[self._connectiontest.current_index]['username']
+        password = \
+            self.connections[self._connectiontest.current_index]['password']
+        transport = \
+            self.connections[self._connectiontest.current_index]['transport']
+        port = self.connections[self._connectiontest.current_index]['port']
+        alias = self.connections[self._connectiontest.current_index]['alias']
+        return_value = host, username, password, transport, port, alias
         return return_value
 
     def get_switches(self):
@@ -80,7 +90,8 @@ class AristaLibrary:
             password = values['password']
             port = values['port']
             transport = values['transport']
-            info = host, username, password, transport, port
+            alias = values['alias']
+            info = host, username, password, transport, port, alias
             return_value.append(info)
         return return_value
 
@@ -90,7 +101,5 @@ class AristaLibrary:
         self.port = '443'
         self.username = 'admin'
         self.password = 'admin'
-        self.conn = []
-        self.active = None
-        self.current_ip = ''
         self.connections = dict()
+        self._connectiontest.close_all()

@@ -4,6 +4,8 @@
 *** Settings ***
 Documentation	This is a sample Robot Framework suite which takes advantage of the AristaLibrary
 ...	for communicating with and controlling Arista switches.
+...	Run with:
+...	pybot --pythonpath=AristaLibrary --noncritical new demo/unittest.txt
 
 Library	AristaLibrary
 Library	Collections
@@ -12,8 +14,10 @@ Suite Teardown	Clear All Connection
 
 *** Variables ***
 ${TRANSPORT}	http
-${PORT}	8443
 ${SW1_HOST}	localhost
+${SW1_PORT}	2080
+${SW2_HOST}	localhost
+${SW2_PORT}	2081
 ${USERNAME}	vagrant
 ${PASSWORD}	vagrant
 
@@ -57,28 +61,56 @@ Check Bad Version Contains
 
 Connect To Switch With Bad Password
 	[Documentation]	Ensure useful error is raised during a failed connection setup
-	[tags]	connect
-	${err}=	Run Keyword And Expect Error	*	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password='fred'	port=${PORT}
+	[tags]	connect	new
+	${err}=	Run Keyword And Expect Error	*	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password='fred'	port=${SW1_PORT}
 	#Log To Console	"Connection to switch1: ${switch1}"
 	Log	"'Expected ERROR was returned: ${err}"
 
 Connect To Switch With Bad Transport
 	[Documentation]	Ensure useful error is raised during a failed connection setup
-	[tags]	connect
-	${err}=	Run Keyword And Expect Error	*	Connect To	host=${SW1_HOST}	transport='https'	username=${USERNAME}	password=${PASSWORD}	port=${PORT}
+	[tags]	connect	new
+	${err}=	Run Keyword And Expect Error	*	Connect To	host=${SW1_HOST}	transport='https'	username=${USERNAME}	password=${PASSWORD}	port=${SW1_PORT}
 	#Log To Console	"Connection to switch1: ${switch1}"
 	Log	"'Expected ERROR was returned: ${err}"
 
 Connect To Switch With Bad port
 	[Documentation]	Ensure useful error is raised during a failed connection setup
-	[tags]	connect
-	${err}=	Run Keyword And Expect Error	*	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password=${PASSWORD}	port=80
+	[tags]	connect	new
+	${err}=	Run Keyword And Expect Error	*	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password=${PASSWORD}	port=9999
 	#Log To Console	"Connection to switch1: ${switch1}"
-	Log	"'Expected ERROR was returned: ${err}"
+	Log	"Expected ERROR was returned: ${err}"
+
+Get Switch Info
+	[tags]	connect	switch	new
+	@{result}=	Get Switch
+	#Log To Console	${result}
+
+Add A New Switch Connection
+	[tags]	connect	switch	new
+	#${switch2}=	Connect To	host=172.16.130.50	transport=http	username=admin	password=admin	port=${SW2_PORT}
+	${switch2}=	Connect To	host=${SW2_HOST}	transport=http	username=admin	password=admin	port=${SW2_PORT}
+	#Log To Console	${switch2}
+
+Get All Switches Info
+	[tags]	connect	switch	new
+	@{result}=	Get Switches
+	Get Length	${result}
+	Length Should Be	${result}	2	msg="Did not find 2 connections in list."
+
+Change Between Switches
+	[tags]	connect	switch	new
+	@{result}=	Get Switches
+	#Change To Switch	@{result[0]}
+	${sw}=	Change To Switch	${SW1_HOST}
+	${output}=	Run Cmds	show version
+	#${sw}=	Change To Switch	172.16.130.50
+	${sw}=	Change To Switch	${SW2_HOST}
+	${output}=	Run Cmds	show version
+
 
 *** Keywords ***
 Connect To Switch
 	[Documentation]	Establish connection to a switch which gets used by other test cases.
-	${switch1}=	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password=${PASSWORD}	port=${PORT}
+	${switch1}=	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password=${PASSWORD}	port=${SW1_PORT}
 	#Log To Console	"Connection to switch1: ${switch1}"
 

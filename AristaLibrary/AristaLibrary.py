@@ -95,6 +95,15 @@ class AristaLibrary:
             return_value.append(info)
         return return_value
 
+    def enable(self, command):
+        try:
+            return pyeapi.client.Node(self._connectiontest.current).enable(
+                [command])
+        except CommandError as e:
+            raise AssertionError('eAPI CommandError: {}'.format(e))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
+
     def clear_all_connection(self):
         self.host = 'localhost'
         self.transport = 'https'

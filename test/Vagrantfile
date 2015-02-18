@@ -1,0 +1,83 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+# All Vagrant configuration is done below. The "2" in Vagrant.configure
+# configures the configuration version (we support older styles for
+# backwards compatibility). Please don't change it unless you know what
+# you're doing.
+
+# For debugging, uncomment the config.vm.boot_mode line, below.
+# boot_mode :gui is a v1 API option
+#Vagrant.configure("1") do |config|
+#  config.vm.boot_mode = :gui
+#end
+
+NODE_COUNT = 2
+# This will create N VMs where:
+#  - name=veos{N}
+#  - guest port  80 maps to 208{N}
+#  - guest port 443 maps to 244{N}
+
+# Create a reasonably unique ID:
+INTNET_NAME = [*('A'..'Z')].sample(8).join
+
+Vagrant.configure(2) do |config|
+  # The most common configuration options are documented and commented below.
+  # For a complete reference, please see the online documentation at
+  # https://docs.vagrantup.com.
+  NODE_COUNT.times do |i|
+    node_id = "veos#{i}"
+    config.vm.define node_id do |node|
+      node.vm.box_url = "http://repo.nh.aristanetworks.com/develop/vagrant/vEOS_4.14.3F_virtualbox.box"
+      node.vm.box = "vEOS_4.14.3F"
+
+      # Not supported in vEOS, yet
+      #node.vm.hostname = "#{node_id}"
+
+      # Need to determine a way to randomize the forwarded ports AND to
+      #   pass those port numbers on to pybot
+      node.vm.network "forwarded_port", guest: 80, host: "777#{i}"
+      node.vm.network "forwarded_port", guest: 443, host: "244#{i}"
+
+      config.vm.provider "virtualbox" do |v|
+        # Set VM name in VirtualBox
+        v.name = "#{INTNET_NAME}-#{node_id}"
+      end
+    end
+  end
+
+  config.vm.provider "virtualbox" do |v|
+    # Debugging
+    v.gui = true
+    # Put both Et1 interfaces on the same internal network
+    v.customize ["modifyvm", :id, "--nic2", "intnet", "--intnet2", "#{INTNET_NAME}"]
+  end
+
+  #######################################
+  # Common configuration options
+  #######################################
+  # Disable synced folders
+  config.vm.synced_folder ".", "/vagrant", disabled: true
+  # on EOS only root can get a bash shell on login
+  config.ssh.username = "root"
+
+  # If you need to do custom config on the VMs:
+  #config.vm.provision "shell", inline: <<-SHELL
+  #  FastCli -p 15 -c "configure
+  #  management api http-commands
+  #  no shutdown
+  #  end
+  #  copy running-config startup-config"
+  #SHELL
+  #
+  config.vm.provision "shell", inline: <<-SHELL
+    FastCli -p 15 -c "configure
+    management api http-commands
+       no protocol https
+       protocol http
+       no shutdown
+    end
+    copy running-config startup-config"
+  SHELL
+
+end

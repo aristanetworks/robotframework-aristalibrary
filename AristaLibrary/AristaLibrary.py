@@ -85,7 +85,7 @@ class AristaLibrary:
         self.active_node = None
 
     # ---------------- Start Core Keywords ---------------- #
-    
+
     def connect_to(self, host='localhost', transport='https', port='443',
                    username='admin', password='admin'):
 

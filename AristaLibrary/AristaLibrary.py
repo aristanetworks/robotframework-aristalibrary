@@ -56,8 +56,11 @@ class AristaLibrary:
                                  % (str(version), version_number))
         return True
 
-    def run_commands(self, command):
+    def run_commands(self, command, all_info=False):
         try:
+            if all_info:
+                return pyeapi.client.Node(self._connectiontest.current).enable(
+                    [command])
             return pyeapi.client.Node(self._connectiontest.current).enable(
                 [command])[0]['result']
         except CommandError as e:

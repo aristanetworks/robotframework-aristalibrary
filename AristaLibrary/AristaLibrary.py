@@ -73,8 +73,8 @@ class AristaLibrary:
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
-    def __init__(self, transport="https", host='localhost',
-                 username="admin", password="admin", port="443"):
+    def __init__(self, transport='https', host='localhost',
+                 username='admin', password='admin', port='443'):
         self.host = host
         self.transport = transport
         self.port = port
@@ -83,6 +83,8 @@ class AristaLibrary:
         self.connections = dict()
         self.active = None
         self.active_node = None
+
+    # ---------------- Start Core Keywords ---------------- #
 
     def connect_to(self, host='localhost', transport='https', port='443',
                    username='admin', password='admin'):
@@ -171,6 +173,169 @@ class AristaLibrary:
             raise AssertionError('eAPI execute command: {}'.format(e))
         return self.active
 
+    def change_to_switch(self, ip):
+        self.active = self.connections[ip]['conn']
+        self.active_node = self.connections[ip]['node']
+        self.current_ip = ip
+
+    def clear_all_connection(self):
+        """
+        This keyword removes all connection objects from the cache and resets
+        the base object to the initial state.
+        """
+        self.host = 'localhost'
+        self.transport = 'https'
+        self.port = '443'
+        self.username = 'admin'
+        self.password = 'admin'
+        self.conn = []
+        self.active = None
+        self.active_node = None
+        self.current_ip = ''
+        self.connections = dict()
+
+    def get_switch(self):
+        """
+        The Get Switch keyword returns information about the active switch
+        connection. Details include the host, username, password, transport and
+        port.
+        """
+        host = self.connections[self.current_ip]['host']
+        username = self.connections[self.current_ip]['username']
+        password = self.connections[self.current_ip]['password']
+        transport = self.connections[self.current_ip]['transport']
+        port = self.connections[self.current_ip]['port']
+        return_value = host, username, password, transport, port
+        return return_value
+
+    def get_switches(self):
+        """
+        The Get Switches keyword returns a list of all nodes that are
+        in your cache. It will return the host, username, password,
+        port, transport.
+        """
+        return_value = list()
+        for name, values in self.connections.items():
+            host = values['host']
+            username = values['username']
+            password = values['password']
+            port = values['port']
+            transport = values['transport']
+            info = host, username, password, transport, port
+            return_value.append(info)
+        return return_value
+
+    # ---------------- End Core Keywords ---------------- #
+
+    # ---------------- Start Analysis Keywords ---------- #
+    def list_extensions(self, available='any', installed='any'):
+        """
+        The List Extensions keyword returns a list with the name of each
+        extension present on the node.
+
+        Arguments:
+        *available*: By default this is 'any', meaning the available status of the \
+        extension will not be used to filter to output.
+
+        Only return 'Available' extensions:
+        | available=True
+        Only return 'Not Available' extensions
+        | available=False
+
+        *installed*: By default this is 'any', meaning the installed status of the \
+        extension will not be used to filter to output.
+
+        Only return 'Installed' extensions:
+        | installed=True
+        Only return 'Not Installed' extensions
+        | installed=False
+        Only return extensions which were installed by force:
+        | installed="forced"
+
+        Sample 'Show Version' output from the CLI:
+
+        | Name                                       Version/Release           Status extension
+        | ------------------------------------------ ------------------------- ------ ----
+        | eos-puppet-conf-0.1-1.eos4.noarch.rpm      0.1/1.eos4                A, I      1
+        | puppet-3.7.1-3-ruby2.swix                  3.7.1/1.eos4              A, I     14
+        | ruby-2.0.0-1.swix                          2.0.0.353/16.fc14         A, I     11
+        |
+        | A: available | NA: not available | I: installed | NI: not installed | F: forced
+
+        Note: If you want all data pertaining to the extensions use the Get
+        Extensions keyword.
+        """
+        # Confirm parameter values are acceptable
+        if available not in [True, False, 'any']:
+            raise AssertionError('Incorrect parameter value: %s. '
+                                 'Choose from [True|False|any]' % available)
+
+        if installed not in [True, False, 'forced', 'any']:
+            raise AssertionError('Incorrect parameter value: %s. '
+                                 'Choose from [True|False|forced|any]' % installed)
+
+        try:
+            out = self.active_node.enable(['show extensions'])
+            out = out[0]
+        except Exception as e:
+            raise e
+            return False
+
+        if out['encoding'] == 'json':
+            extensions = out['result']['extensions']
+            filtered = []
+            for ext, data in extensions.items():
+                if (available == True and data['presence'] != 'present'):
+                    continue
+                elif (available == False and data['presence'] == 'present'):
+                    continue
+
+                if (installed == True and data['status'] != 'installed'):
+                    continue
+                elif (installed == "forced" and data['status'] != 'forceInstalled'):
+                    continue
+                elif (installed == False and data['status'] != 'notInstalled'):
+                    continue
+
+                # If all of the checks above pass then we can append the extension to
+                # the list
+                filtered.append(ext)
+
+            return filtered
+
+    def run_cmds(self, commands, format='json'):
+        """
+        The Run Cmds keyword allows you to run any eAPI command against your
+        switch and then process the output using Robot's builtin keywords.
+
+        Arguments:
+        - commands: This must be the full eAPI command and not the short form
+        that works on the CLI.
+
+        Example:
+
+        Good:
+        | show version
+        Bad:
+        | sho ver
+
+        - format: This is the format that the text will be returned from the API
+        request. The two options are 'text' and 'json'. Note that EOS does not
+        support a JSON response for all commands. Please refer to your EOS
+        Command API documentation for more details.
+        """
+        try:
+            commands = make_iterable(commands)
+            return self.active.execute(commands, format)
+        except CommandError as e:
+            error = ""
+            # This just added by Peter in pyeapi 10 Feb 2015
+            # if self.active_node.connection.error.command_error:
+            #     error = self.active_node.connection.error.command_error
+            raise AssertionError('eAPI CommandError: {}\n{}'.format(e, error))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
+
     def version_should_contain(self, version):
         """This keyword validates the EOS version running on your node. It is
         flexible is that it does not require an exact match - e.g. 4.14 == 4.14.0F.
@@ -205,87 +370,3 @@ class AristaLibrary:
             raise AssertionError('Searched for %s, Found %s'
                                  % (str(version), version_number))
         return True
-
-    def run_cmds(self, commands, format='json'):
-        """
-        The Run Cmds keyword allows you to run any eAPI command against your
-        switch and then process the output using Robot's builtin keywords.
-
-        Arguments:
-        - commands: This must be the full eAPI command and not the short form
-        that works on the CLI.
-
-        Example:
-        Good:
-        | show version
-        Bad:
-        | sho ver
-
-        - format: This is the format that the text will be returned from the API
-        request. The two options are 'text' and 'json'. Note that EOS does not
-        support a JSON response for all commands. Please refer to your EOS
-        Command API documentation for more details.
-        """
-        try:
-            commands = make_iterable(commands)
-            return self.active.execute(commands, format)
-        except CommandError as e:
-            error = ""
-            # This just added by Peter in pyeapi 10 Feb 2015
-            # if self.active_node.connection.error.command_error:
-            #     error = self.active_node.connection.error.command_error
-            raise AssertionError('eAPI CommandError: {}\n{}'.format(e, error))
-        except Exception as e:
-            raise AssertionError('eAPI execute command: {}'.format(e))
-
-    def change_to_switch(self, ip):
-        self.active = self.connections[ip]['conn']
-        self.active_node = self.connections[ip]['node']
-        self.current_ip = ip
-
-    def get_switch(self):
-        """
-        The Get Switch keyword returns information about the active switch
-        connection. Details include the host, username, password, transport and
-        port.
-        """
-        host = self.connections[self.current_ip]['host']
-        username = self.connections[self.current_ip]['username']
-        password = self.connections[self.current_ip]['password']
-        transport = self.connections[self.current_ip]['transport']
-        port = self.connections[self.current_ip]['port']
-        return_value = host, username, password, transport, port
-        return return_value
-
-    def get_switches(self):
-        """
-        The Get Switches keyword returns a list of all nodes that are
-        in your cache. It will return the host, username, password,
-        port, transport.
-        """
-        return_value = list()
-        for name, values in self.connections.items():
-            host = values['host']
-            username = values['username']
-            password = values['password']
-            port = values['port']
-            transport = values['transport']
-            info = host, username, password, transport, port
-            return_value.append(info)
-        return return_value
-
-    def clear_all_connection(self):
-        """
-        This keyword removes all connection objects from the cache and resets
-        the base object to the initial state.
-        """
-        self.host = 'localhost'
-        self.transport = 'https'
-        self.port = '443'
-        self.username = 'admin'
-        self.password = 'admin'
-        self.conn = []
-        self.active = None
-        self.active_node = None
-        self.current_ip = ''
-        self.connections = dict()

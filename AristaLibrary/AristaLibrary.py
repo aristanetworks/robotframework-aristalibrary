@@ -227,7 +227,7 @@ class AristaLibrary:
     # ---------------- End Core Keywords ---------------- #
 
     # ---------------- Start Analysis Keywords ---------- #
-    def list_extensions(self, available='any', installed='any', forced='any'):
+    def list_extensions(self, available='any', installed='any'):
         """
         The List Extensions keyword returns a list with the name of each
         extension present on the node.
@@ -248,14 +248,8 @@ class AristaLibrary:
         | installed=True
         Only return 'Not Installed' extensions
         | installed=False
-
-        *forced*: By default this is 'any', meaning the forced status of the \
-        extension will not be used to filter to output.
-
-        Only return extensions installed by 'Force':
-        | forced=True
-        Only return extensions not installed by 'Force':
-        | forced=False
+        Only return extensions which were installed by force:
+        | installed="forced"
 
         Sample 'Show Version' output from the CLI:
 
@@ -270,7 +264,43 @@ class AristaLibrary:
         Note: If you want all data pertaining to the extensions use the Get
         Extensions keyword.
         """
-        # Adding code later
+        # Confirm parameter values are acceptable
+        if available not in [True, False, 'any']:
+            raise AssertionError('Incorrect parameter value: %s. '
+                                 'Choose from [True|False|any]' % available)
+
+        if installed not in [True, False, 'forced', 'any']:
+            raise AssertionError('Incorrect parameter value: %s. '
+                                 'Choose from [True|False|forced|any]' % installed)
+
+        try:
+            out = self.active_node.enable(['show extensions'])
+            out = out[0]
+        except Exception as e:
+            raise e
+            return False
+
+        if out['encoding'] == 'json':
+            extensions = out['result']['extensions']
+            filtered = []
+            for ext, data in extensions.items():
+                if (available == True and data['presence'] != 'present'):
+                    continue
+                elif (available == False and data['presence'] == 'present'):
+                    continue
+
+                if (installed == True and data['status'] != 'installed'):
+                    continue
+                elif (installed == "forced" and data['status'] != 'forceInstalled'):
+                    continue
+                elif (installed == False and data['status'] != 'notInstalled'):
+                    continue
+
+                # If all of the checks above pass then we can append the extension to
+                # the list
+                filtered.append(ext)
+
+            return filtered
 
     def run_cmds(self, commands, format='json'):
         """

@@ -110,8 +110,8 @@ class AristaLibrary:
 
     def get_startup_config(self):
         try:
-            return pyeapi.client.Node(self._connectiontest.current).enable(
-                ['show startup-config'])[0]['result']
+            return pyeapi.client.Node(
+                self._connectiontest.current).startup_config
         except CommandError as e:
             raise AssertionError('eAPI CommandError: {}'.format(e))
         except Exception as e:
@@ -119,8 +119,8 @@ class AristaLibrary:
 
     def get_running_config(self):
         try:
-            return pyeapi.client.Node(self._connectiontest.current).enable(
-                ['show running-config'])[0]['result']
+            return pyeapi.client.Node(
+                self._connectiontest.current).running_config
         except CommandError as e:
             raise AssertionError('eAPI CommandError: {}'.format(e))
         except Exception as e:

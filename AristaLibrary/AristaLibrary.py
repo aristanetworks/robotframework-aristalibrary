@@ -58,7 +58,8 @@ class AristaLibrary:
 
     def run_cmds(self, command):
         try:
-            return self._connectiontest.current.execute([command])
+            return pyeapi.client.Node(self._connectiontest.current).enable(
+                [command])[0]['result']
         except CommandError as e:
             raise AssertionError('eAPI CommandError: {}'.format(e))
         except Exception as e:

@@ -56,7 +56,7 @@ class AristaLibrary:
                                  % (str(version), version_number))
         return True
 
-    def run_cmds(self, command):
+    def run_commands(self, command):
         try:
             return pyeapi.client.Node(self._connectiontest.current).enable(
                 [command])[0]['result']
@@ -100,6 +100,15 @@ class AristaLibrary:
         try:
             return pyeapi.client.Node(self._connectiontest.current).enable(
                 [command])
+        except CommandError as e:
+            raise AssertionError('eAPI CommandError: {}'.format(e))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
+
+    def get_startup_config(self):
+        try:
+            return pyeapi.client.Node(self._connectiontest.current).enable(
+                ['show startup-config'])[0]['result']
         except CommandError as e:
             raise AssertionError('eAPI CommandError: {}'.format(e))
         except Exception as e:

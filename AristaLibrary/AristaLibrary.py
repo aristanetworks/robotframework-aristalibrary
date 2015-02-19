@@ -126,6 +126,17 @@ class AristaLibrary:
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
+    def config(self, commands):
+        try:
+            return pyeapi.client.Node(
+                self._connectiontest.current).config(commands)
+        except CommandError as e:
+            raise AssertionError('eAPI CommandError: {}'.format(e))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
+
+    configure = config
+
     def clear_all_connection(self):
         self.host = 'localhost'
         self.transport = 'https'

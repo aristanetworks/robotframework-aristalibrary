@@ -16,10 +16,11 @@ class AristaLibrary:
         self.password = password
         self.alias = None
         self.connections = dict()
-        self._connectiontest = ConnectionCache()
+        self._connection = ConnectionCache()
 
     def connect_to(self, host='localhost', transport='https', port='443',
-                   username='admin', password='admin', alias=None):
+                   username='admin', password='admin', alias=None,
+                   autorefresh=True):
         host = str(host)
         transport = str(transport)
         port = int(port)
@@ -31,7 +32,9 @@ class AristaLibrary:
             client = pyeapi.connect(
                 host=host, transport=transport,
                 username=username, password=password, port=port)
-            conn_indx = self._connectiontest.register(client, alias)
+            client_node = pyeapi.client.Node(client)
+            client_node.autorefresh = autorefresh
+            conn_indx = self._connection.register(client_node, alias)
         except Exception as e:
             print e
             return False
@@ -41,13 +44,15 @@ class AristaLibrary:
                                            username=username,
                                            password=password,
                                            port=port,
-                                           alias=alias)
+                                           alias=alias,
+                                           autorefresh=autorefresh)
         return conn_indx
 
     def version_should_contain(self, version):
         try:
-            out = self._connectiontest.current.execute(['show version'])
-            version_number = str(out['result'][0]['version'])
+            out = self._connection.current.enable(
+                ['show version'])[0]['result']
+            version_number = str(out['version'])
         except Exception as e:
             raise e
             return False
@@ -59,9 +64,9 @@ class AristaLibrary:
     def run_commands(self, command, all_info=False):
         try:
             if all_info:
-                return pyeapi.client.Node(self._connectiontest.current).enable(
+                return self._connection.current.enable(
                     [command])
-            return pyeapi.client.Node(self._connectiontest.current).enable(
+            return self._connection.current.enable(
                 [command])[0]['result']
         except CommandError as e:
             raise AssertionError('eAPI CommandError: {}'.format(e))
@@ -69,21 +74,24 @@ class AristaLibrary:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
     def change_to_switch(self, index_or_alias):
-        old_index = self._connectiontest.current_index
-        self._connectiontest.switch(index_or_alias)
+        old_index = self._connection.current_index
+        self._connection.switch(index_or_alias)
         return old_index
 
     def get_switch(self):
-        host = self.connections[self._connectiontest.current_index]['host']
+        host = self.connections[self._connection.current_index]['host']
         username = \
-            self.connections[self._connectiontest.current_index]['username']
+            self.connections[self._connection.current_index]['username']
         password = \
-            self.connections[self._connectiontest.current_index]['password']
+            self.connections[self._connection.current_index]['password']
         transport = \
-            self.connections[self._connectiontest.current_index]['transport']
-        port = self.connections[self._connectiontest.current_index]['port']
-        alias = self.connections[self._connectiontest.current_index]['alias']
-        return_value = host, username, password, transport, port, alias
+            self.connections[self._connection.current_index]['transport']
+        port = self.connections[self._connection.current_index]['port']
+        alias = self.connections[self._connection.current_index]['alias']
+        autorefresh = \
+            self.connections[self._connection.current_index]['autorefresh']
+        return_value = \
+            host, username, password, transport, port, alias, autorefresh
         return return_value
 
     def get_switches(self):
@@ -95,14 +103,15 @@ class AristaLibrary:
             port = values['port']
             transport = values['transport']
             alias = values['alias']
-            info = host, username, password, transport, port, alias
+            autorefresh = values['autorefresh']
+            info = \
+                host, username, password, transport, port, alias, autorefresh
             return_value.append(info)
         return return_value
 
     def enable(self, command):
         try:
-            return pyeapi.client.Node(self._connectiontest.current).enable(
-                [command])
+            return self._connection.current.enable([command])
         except CommandError as e:
             raise AssertionError('eAPI CommandError: {}'.format(e))
         except Exception as e:
@@ -110,8 +119,7 @@ class AristaLibrary:
 
     def get_startup_config(self):
         try:
-            return pyeapi.client.Node(
-                self._connectiontest.current).startup_config
+            return self._connection.current.startup_config
         except CommandError as e:
             raise AssertionError('eAPI CommandError: {}'.format(e))
         except Exception as e:
@@ -119,8 +127,7 @@ class AristaLibrary:
 
     def get_running_config(self):
         try:
-            return pyeapi.client.Node(
-                self._connectiontest.current).running_config
+            return self._connection.current.running_config
         except CommandError as e:
             raise AssertionError('eAPI CommandError: {}'.format(e))
         except Exception as e:
@@ -128,8 +135,7 @@ class AristaLibrary:
 
     def config(self, commands):
         try:
-            return pyeapi.client.Node(
-                self._connectiontest.current).config(commands)
+            return self._connection.current.config(commands)
         except CommandError as e:
             raise AssertionError('eAPI CommandError: {}'.format(e))
         except Exception as e:
@@ -144,4 +150,4 @@ class AristaLibrary:
         self.username = 'admin'
         self.password = 'admin'
         self.connections = dict()
-        self._connectiontest.close_all()
+        self._connection.close_all()

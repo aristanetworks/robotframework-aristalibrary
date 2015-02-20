@@ -28,7 +28,7 @@ Vagrant.configure(2) do |config|
   NODE_COUNT.times do |i|
     node_id = "veos#{i}"
     config.vm.define node_id do |node|
-      node.vm.box_url = "http://repo.nh.aristanetworks.com/develop/vagrant/vEOS_4.14.3F_virtualbox.box"
+      node.vm.box_url = "http://dist.nh.aristanetworks.com/develop/vagrant/vEOS_4.14.3F_virtualbox.box"
       node.vm.box = "vEOS_4.14.3F"
 
       # Not supported in vEOS, yet

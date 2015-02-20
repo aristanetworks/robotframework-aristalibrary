@@ -52,7 +52,7 @@ pybot \
     --variable SW1_PORT:${HTTP_PORT_PREFIX}0 \
     --variable SW2_PORT:${HTTP_PORT_PREFIX}1 \
     --noncritical new \
-    ../demo/unittest.txt
+    unittest.txt
 #    --pythonpath=../AristaLibrary
 
 vagrant destroy --force

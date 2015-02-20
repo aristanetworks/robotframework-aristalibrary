@@ -35,6 +35,7 @@ import pyeapi
 from pyeapi.eapilib import CommandError
 from pyeapi.utils import make_iterable
 from robot.api import logger
+from robot.utils import ConnectionCache
 import re
 
 
@@ -73,21 +74,22 @@ class AristaLibrary:
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
 
-    def __init__(self, transport='https', host='localhost',
-                 username='admin', password='admin', port='443'):
+    def __init__(self, transport="https", host='localhost',
+                 username="admin", password="admin", port="443", alias=None):
         self.host = host
         self.transport = transport
         self.port = port
         self.username = username
         self.password = password
+        self.alias = None
         self.connections = dict()
-        self.active = None
-        self.active_node = None
+        self._connection = ConnectionCache()
 
     # ---------------- Start Core Keywords ---------------- #
 
     def connect_to(self, host='localhost', transport='https', port='443',
-                   username='admin', password='admin'):
+                   username='admin', password='admin', alias=None,
+                   autorefresh=True):
 
         """This is the cornerstone of all testing. The Connect To
         keyword accepts the necessary parameters to setup an API connection to
@@ -129,40 +131,108 @@ class AristaLibrary:
         If you are new to eAPI see the Arista EOS Central article,
         [https://eos.arista.com/arista-eapi-101|Arista eAPI 101]
         """
+
         host = str(host)
         transport = str(transport)
         port = int(port)
         username = str(username)
         password = str(password)
+        if alias:
+            alias = str(alias)
         try:
-            self.active = pyeapi.connect(
+            client = pyeapi.connect(
                 host=host, transport=transport,
                 username=username, password=password, port=port)
-            self.active_node = pyeapi.client.Node(self.active)
-            # self.active_node.enable(['show version'])
+            client_node = pyeapi.client.Node(client)
+            client_node.autorefresh = autorefresh
+            conn_indx = self._connection.register(client_node, alias)
         except Exception as e:
-            print e
-            return False
-        self.connections[host] = dict(conn=self.active,
-                                      node=self.active_node,
-                                      transport=transport,
-                                      host=host,
-                                      username=username,
-                                      password=password,
-                                      port=port)
-        self.current_ip = host
+            raise e
 
         # Always try "show version" when connecting to a node so that if
         #  there is a configuration error, we can fail quickly.
         try:
-            # self.active_node.enable(['show version'])
-            json = self.active.execute(['show version'])
-            ver = json['result'][0]
+            ver = self._connection.current.enable(
+                ['show version'])[0]['result']
             mesg = "Created connection to {}://{}:{}@{}:{}/command-api: model: {}, serial: {}, systemMAC: {}, version: {}, lastBootTime: {}".format(
                 transport, username, '****', host, port,
                 ver['modelName'], ver['serialNumber'], ver['systemMacAddress'],
                 ver['version'], ver['bootupTimestamp'])
             logger.write(mesg, 'INFO', False)
+        except Exception as e:
+            raise e
+
+        self.connections[conn_indx] = dict(conn=client,
+                                           transport=transport,
+                                           host=host,
+                                           username=username,
+                                           password=password,
+                                           port=port,
+                                           alias=alias,
+                                           autorefresh=autorefresh)
+        return conn_indx
+
+    def run_cmds(self, commands, format='json'):
+        """
+        The Run Cmds keyword allows you to run any eAPI command against your
+        switch and then process the output using Robot's builtin keywords.
+
+        Arguments:
+        - commands: This must be the full eAPI command and not the short form
+        that works on the CLI.
+
+        Example:
+
+        Good:
+        | show version
+        Bad:
+        | sho ver
+
+        - format: This is the format that the text will be returned from the API
+        request. The two options are 'text' and 'json'. Note that EOS does not
+        support a JSON response for all commands. Please refer to your EOS
+        Command API documentation for more details.
+        """
+        try:
+            commands = make_iterable(commands)
+            return self.active.execute(commands, format)
+        except CommandError as e:
+            error = ""
+            # This just added by Peter in pyeapi 10 Feb 2015
+            # if self.active_node.connection.error.command_error:
+            #     error = self.active_node.connection.error.command_error
+            raise AssertionError('eAPI CommandError: {}\n{}'.format(e, error))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
+
+    def run_commands(self, command, all_info=False):
+        # TODO: Jere update me
+        """
+        The Run Commands keyword allows you to run any eAPI command against your
+        switch and then process the output using Robot's builtin keywords.
+
+        Arguments:
+        - commands: This must be the full eAPI command and not the short form
+        that works on the CLI.
+
+        Example:
+
+        Good:
+        | show version
+        Bad:
+        | sho ver
+
+        - format: This is the format that the text will be returned from the API
+        request. The two options are 'text' and 'json'. Note that EOS does not
+        support a JSON response for all commands. Please refer to your EOS
+        Command API documentation for more details.
+        """
+        try:
+            if all_info:
+                return self._connection.current.enable(
+                    [command])
+            return self._connection.current.enable(
+                [command])[0]['result']
         except CommandError as e:
             error = ""
             # This just added by Peter to pyeapi 10 Feb 2015
@@ -171,14 +241,22 @@ class AristaLibrary:
             raise AssertionError('eAPI CommandError: {}\n{}'.format(e, error))
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
-        return self.active
 
-    def change_to_switch(self, ip):
-        self.active = self.connections[ip]['conn']
-        self.active_node = self.connections[ip]['node']
-        self.current_ip = ip
+    def change_to_switch(self, index_or_alias):
+        # TODO update docstring
+        """The Change To Switch keyword changes the active switch connectioni
+        for all following keywords.
 
-    def clear_all_connection(self):
+        Arguments:
+        - index_or_alias: The connection index or the alias of the desiredr
+        connection.
+        """
+
+        old_index = self._connection.current_index
+        self._connection.switch(index_or_alias)
+        return old_index
+
+    def clear_all_connections(self):
         """
         This keyword removes all connection objects from the cache and resets
         the base object to the initial state.
@@ -188,11 +266,8 @@ class AristaLibrary:
         self.port = '443'
         self.username = 'admin'
         self.password = 'admin'
-        self.conn = []
-        self.active = None
-        self.active_node = None
-        self.current_ip = ''
         self.connections = dict()
+        self._connection.close_all()
 
     def get_switch(self):
         """
@@ -200,12 +275,20 @@ class AristaLibrary:
         connection. Details include the host, username, password, transport and
         port.
         """
-        host = self.connections[self.current_ip]['host']
-        username = self.connections[self.current_ip]['username']
-        password = self.connections[self.current_ip]['password']
-        transport = self.connections[self.current_ip]['transport']
-        port = self.connections[self.current_ip]['port']
-        return_value = host, username, password, transport, port
+
+        host = self.connections[self._connection.current_index]['host']
+        username = \
+            self.connections[self._connection.current_index]['username']
+        password = \
+            self.connections[self._connection.current_index]['password']
+        transport = \
+            self.connections[self._connection.current_index]['transport']
+        port = self.connections[self._connection.current_index]['port']
+        alias = self.connections[self._connection.current_index]['alias']
+        autorefresh = \
+            self.connections[self._connection.current_index]['autorefresh']
+        return_value = \
+            host, username, password, transport, port, alias, autorefresh
         return return_value
 
     def get_switches(self):
@@ -221,7 +304,10 @@ class AristaLibrary:
             password = values['password']
             port = values['port']
             transport = values['transport']
-            info = host, username, password, transport, port
+            alias = values['alias']
+            autorefresh = values['autorefresh']
+            info = \
+                host, username, password, transport, port, alias, autorefresh
             return_value.append(info)
         return return_value
 
@@ -275,66 +361,32 @@ class AristaLibrary:
                                  'Choose from [True|False|forced|any]' % installed)
 
         try:
-            out = self.active_node.enable(['show extensions'])
+            out = self._connection.current.enable(['show extensions'])
             out = out[0]
         except Exception as e:
             raise e
-            return False
 
         if out['encoding'] == 'json':
             extensions = out['result']['extensions']
             filtered = []
             for ext, data in extensions.items():
-                if (available == True and data['presence'] != 'present'):
+                if available == True and data['presence'] != 'present':
                     continue
-                elif (available == False and data['presence'] == 'present'):
-                    continue
-
-                if (installed == True and data['status'] != 'installed'):
-                    continue
-                elif (installed == "forced" and data['status'] != 'forceInstalled'):
-                    continue
-                elif (installed == False and data['status'] != 'notInstalled'):
+                elif available == False and data['presence'] == 'present':
                     continue
 
-                # If all of the checks above pass then we can append the extension to
-                # the list
+                if installed == True and data['status'] != 'installed':
+                    continue
+                elif installed == "forced" and data['status'] != 'forceInstalled':
+                    continue
+                elif installed == False and data['status'] != 'notInstalled':
+                    continue
+
+                # If all of the checks above pass then we can append the
+                # extension to the list
                 filtered.append(ext)
 
             return filtered
-
-    def run_cmds(self, commands, format='json'):
-        """
-        The Run Cmds keyword allows you to run any eAPI command against your
-        switch and then process the output using Robot's builtin keywords.
-
-        Arguments:
-        - commands: This must be the full eAPI command and not the short form
-        that works on the CLI.
-
-        Example:
-
-        Good:
-        | show version
-        Bad:
-        | sho ver
-
-        - format: This is the format that the text will be returned from the API
-        request. The two options are 'text' and 'json'. Note that EOS does not
-        support a JSON response for all commands. Please refer to your EOS
-        Command API documentation for more details.
-        """
-        try:
-            commands = make_iterable(commands)
-            return self.active.execute(commands, format)
-        except CommandError as e:
-            error = ""
-            # This just added by Peter in pyeapi 10 Feb 2015
-            # if self.active_node.connection.error.command_error:
-            #     error = self.active_node.connection.error.command_error
-            raise AssertionError('eAPI CommandError: {}\n{}'.format(e, error))
-        except Exception as e:
-            raise AssertionError('eAPI execute command: {}'.format(e))
 
     def version_should_contain(self, version):
         """This keyword validates the EOS version running on your node. It is
@@ -361,7 +413,7 @@ class AristaLibrary:
         | Free memory:            285504 kB
         """
         try:
-            out = self.active.execute(['show version'])
+            out = self._connection.current.enable(['show version'])
             version_number = str(out['result'][0]['version'])
         except Exception as e:
             raise e
@@ -370,3 +422,38 @@ class AristaLibrary:
             raise AssertionError('Searched for %s, Found %s'
                                  % (str(version), version_number))
         return True
+
+    def enable(self, command):
+        try:
+            return self._connection.current.enable([command])
+        except CommandError as e:
+            raise AssertionError('eAPI CommandError: {}'.format(e))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
+
+    def get_startup_config(self):
+        try:
+            return self._connection.current.startup_config
+        except CommandError as e:
+            raise AssertionError('eAPI CommandError: {}'.format(e))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
+
+    def get_running_config(self):
+        try:
+            return self._connection.current.running_config
+        except CommandError as e:
+            raise AssertionError('eAPI CommandError: {}'.format(e))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
+
+    def config(self, commands):
+        try:
+            return self._connection.current.config(commands)
+        except CommandError as e:
+            raise AssertionError('eAPI CommandError: {}'.format(e))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
+
+    configure = config
+

@@ -1,4 +1,3 @@
-#
 # Copyright (c) 2015, Arista Networks, Inc.
 # All rights reserved.
 #
@@ -61,10 +60,10 @@ class AristaLibrary:
 
     = Installing the library =
     You can get the AristaLibrary using PIP
-    | robotframework-aristalibrary
+    | pip install robotframework-aristalibrary
 
     or install from source
-    | <add source code link here once
+    | <add source code link here once moved to GitHub>
 
     = Examples =
     == Connecting to a test node ==
@@ -76,6 +75,11 @@ class AristaLibrary:
 
     def __init__(self, transport="https", host='localhost',
                  username="admin", password="admin", port="443", alias=None):
+        """Defaults may be changed by specifying when importing the library:
+        | *** Setting ***
+        | Library AristaLibrary
+        | Library AristaLirary | username="apiuser" | password="donttell"
+        """
         self.host = host
         self.transport = transport
         self.port = port
@@ -99,10 +103,10 @@ class AristaLibrary:
         | Connect To | host=192.0.2.50 | transport=http | port=80 | username=myUser | password=secret |
         | Connect To | host=192.0.2.51 | username=myUser | password=secret |
 
-        This function returns the pyeapi connection object, so you can save this
-        for later reference by doing something like this:
+        This function returns a connection index, which can be used to change
+        connections during a test suite. Example:
 
-        | ${node}= | Connect To | host=192.0.2.51 | username=myUser | password=secret |
+        | ${switch1}= | Connect To | host=192.0.2.51 | username=myUser | password=secret |
 
         You can confirm which interface eAPI is listening on by running:
         | veos-node>show management api http-commands
@@ -163,6 +167,8 @@ class AristaLibrary:
             raise e
 
         self.connections[conn_indx] = dict(conn=client,
+                                           node=client_node,
+                                           index=conn_indx,
                                            transport=transport,
                                            host=host,
                                            username=username,
@@ -172,14 +178,96 @@ class AristaLibrary:
                                            autorefresh=autorefresh)
         return conn_indx
 
-    def run_cmds(self, commands, format='json'):
+    def change_to_switch(self, index_or_alias):
+        # TODO update docstring
+        """Change To Switch changes the active switch for all following keywords.
+
+        Arguments:
+        - `index_or_alias`: The connection index (integer) or the alias (string)
+        of the desired connection.
+
+        Returns the index of the previous connection which can be stored for reuse.
+
+        Example:
+        | ${uut1}=                | Connect To       | ...           |
+        | ${uut2}=                | Connect To       | alias=foo ... |
+        | Configure hostname uut2 |                  |               |
+        | ${previous}=            | Change To Switch | ${uut1}       |
+        | ${ver_info}=            | Run Commands     | show version  |
+        | Change To Switch        | ${previous}      |               |
+        | Change To Switch        | foo              |               |
         """
-        The Run Cmds keyword allows you to run any eAPI command against your
+
+        old_index = self._connection.current_index
+        self._connection.switch(index_or_alias)
+        return old_index
+
+    def clear_all_connections(self):
+        """ Remove all connection objects from the cache and resets the list of
+        indexes.
+        """
+        self.host = 'localhost'
+        self.transport = 'https'
+        self.port = '443'
+        self.username = 'admin'
+        self.password = 'admin'
+        self.connections = dict()
+        # Since we don't really have anything to close, just delete entries.
+        #self._connection.close_all()
+        self._connection.empty_cache()
+
+    def get_switch(self, index_or_alias=None):
+        """ Get Switch returns a dictionary of information about the active
+        switch connection. Details include the host, username, password,
+        transport and port.
+
+        Example:
+        | ${uut1}         | Connect To                               | ....               |
+        | ${switch_info}= | Get Switch                               |                    |
+        | ${switch_info}= | Get Switch                               | index_or_alias=2   |
+        | ${switch_info}= | Get Switch                               | index_or_alias=foo |
+        | Log             | Connected to port ${switch_info['port']} |                    |
+        """
+
+        if not index_or_alias:
+            index_or_alias = self._connection.current_index
+        #values = self.connections[index_or_alias]
+        try:
+            values = self.connections[self._connection._resolve_alias_or_index(index_or_alias)]
+        except (ValueError, KeyError):
+            values = {'index': None,
+                      'alias': None
+                     }
+        return values
+
+    def get_switches(self):
+        """
+        The Get Switches keyword returns a list of all nodes that are
+        in your cache. It will return the host, username, password,
+        port, transport.
+
+        Example:
+        | ${uut1}         | Connect To                                               | .... |
+        | ${uut2}         | Connect To                                               | .... |
+        | @{switch_info}= | Get Switches                                             |      |
+        | Log             | First switch connected to port ${switch_info[0]['port']} |      |
+        """
+        return_value = list()
+        for indx, values in self.connections.items():
+            return_value.append(values)
+        return return_value
+
+    # ---------------- End Core Keywords ---------------- #
+
+    # ---------------- Start Analysis Keywords ---------- #
+
+    def run_cmds(self, commands, format='json'):
+        """Run Cmds allows low-level access to run any eAPI command against your
         switch and then process the output using Robot's builtin keywords.
 
         Arguments:
-        - commands: This must be the full eAPI command and not the short form
-        that works on the CLI.
+        - commands: This must be the full eAPI command. command may not the
+        short form that works on the CLI.
 
         Example:
 
@@ -188,14 +276,19 @@ class AristaLibrary:
         Bad:
         | sho ver
 
-        - format: This is the format that the text will be returned from the API
+        - `format` is the format that the text will be returned from the API
         request. The two options are 'text' and 'json'. Note that EOS does not
         support a JSON response for all commands. Please refer to your EOS
         Command API documentation for more details.
+
+        Examples:
+        | ${json_dict}= | Run Cmds | show version                |             |
+        | ${raw_text}=  | Run Cmds | show interfaces description | format=text |
         """
         try:
             commands = make_iterable(commands)
-            return self.active.execute(commands, format)
+            client = self.connections[self._connection.current_index]['conn']
+            return client.execute(commands, format)
         except CommandError as e:
             error = ""
             # This just added by Peter in pyeapi 10 Feb 2015
@@ -207,13 +300,16 @@ class AristaLibrary:
 
     def run_commands(self, command, all_info=False):
         # TODO: Jere update me
-        """
-        The Run Commands keyword allows you to run any eAPI command against your
-        switch and then process the output using Robot's builtin keywords.
+        """Run Commands allows you to run any eAPI command against your
+        switch and then process the output using Robot's builtin keywords.  It
+        will automatically ensure the CLI is in `enable` mode prior to executing
+        the command(s).
 
         Arguments:
-        - commands: This must be the full eAPI command and not the short form
-        that works on the CLI.
+        - `commands`: This must be the full eAPI command and not the short form
+        that works on the CLI.  `commands` may be a single command or a list of
+        commands.  When passing a list to Run Commands, it should be given as a
+        scalar.
 
         Example:
 
@@ -226,6 +322,12 @@ class AristaLibrary:
         request. The two options are 'text' and 'json'. Note that EOS does not
         support a JSON response for all commands. Please refer to your EOS
         Command API documentation for more details.
+
+        Examples:
+        | ${json_dict}= | Run Commands | show version                |               |
+        | ${raw_text}=  | Run Commands | show interfaces description | all_info=True |
+        | @{commands}=  | show version | show interfaces Ethernet 1  |               |
+        | ${json_dict}= | Run Commands | ${commands}                 |               |
         """
         try:
             if all_info:
@@ -242,94 +344,92 @@ class AristaLibrary:
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
-    def change_to_switch(self, index_or_alias):
-        # TODO update docstring
-        """The Change To Switch keyword changes the active switch connectioni
-        for all following keywords.
+    def enable(self, command):
+        try:
+            return self._connection.current.enable([command])
+        except CommandError as e:
+            raise AssertionError('eAPI CommandError: {}'.format(e))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
 
-        Arguments:
-        - index_or_alias: The connection index or the alias of the desiredr
-        connection.
+    def get_startup_config(self):
+        try:
+            return self._connection.current.startup_config
+        except CommandError as e:
+            raise AssertionError('eAPI CommandError: {}'.format(e))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
+
+    def get_running_config(self):
+        try:
+            return self._connection.current.running_config
+        except CommandError as e:
+            raise AssertionError('eAPI CommandError: {}'.format(e))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
+
+    def config(self, commands):
+        try:
+            return self._connection.current.config(commands)
+        except CommandError as e:
+            raise AssertionError('eAPI CommandError: {}'.format(e))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
+
+    configure = config
+
+    def version_should_contain(self, version):
+        """Version Should Contain compares the EOS version running on your node
+        with the string provided.
+        It is flexible in that it does not require an exact match -
+        e.g. 4.14 == 4.14.0F.
+
+        Example:
+        | Version Should Contain | 4.14.0F |
+
+        This keyword evaluates the 'Software image version' from 'Show Version'
+        Example:
+        | veos-node# show version
+        | Arista vEOS
+        | Hardware version:
+        | Serial number:
+        | System MAC address:  0011.2233.4455
+        |
+        | *Software image version: 4.14.2F*
+        | Architecture:           i386
+        | Internal build version: 4.14.2F-2083164.4142F.1
+        | Internal build ID:      19fe6cb3-1777-40b6-a4e6-53875b30658c
+        |
+        | Uptime:                 21 hours and 59 minutes
+        | Total memory:           2028804 kB
+        | Free memory:            285504 kB
         """
+        try:
+            out = self._connection.current.enable(['show version'])[0]['result']
+            version_number = str(out['version'])
+        except Exception as e:
+            raise e
+            return False
+        if not re.search(str(version), version_number):
+            raise AssertionError('Searched for %s, Found %s'
+                                 % (str(version), version_number))
+        return True
 
-        old_index = self._connection.current_index
-        self._connection.switch(index_or_alias)
-        return old_index
-
-    def clear_all_connections(self):
-        """
-        This keyword removes all connection objects from the cache and resets
-        the base object to the initial state.
-        """
-        self.host = 'localhost'
-        self.transport = 'https'
-        self.port = '443'
-        self.username = 'admin'
-        self.password = 'admin'
-        self.connections = dict()
-        self._connection.close_all()
-
-    def get_switch(self):
-        """
-        The Get Switch keyword returns information about the active switch
-        connection. Details include the host, username, password, transport and
-        port.
-        """
-
-        host = self.connections[self._connection.current_index]['host']
-        username = \
-            self.connections[self._connection.current_index]['username']
-        password = \
-            self.connections[self._connection.current_index]['password']
-        transport = \
-            self.connections[self._connection.current_index]['transport']
-        port = self.connections[self._connection.current_index]['port']
-        alias = self.connections[self._connection.current_index]['alias']
-        autorefresh = \
-            self.connections[self._connection.current_index]['autorefresh']
-        return_value = \
-            host, username, password, transport, port, alias, autorefresh
-        return return_value
-
-    def get_switches(self):
-        """
-        The Get Switches keyword returns a list of all nodes that are
-        in your cache. It will return the host, username, password,
-        port, transport.
-        """
-        return_value = list()
-        for name, values in self.connections.items():
-            host = values['host']
-            username = values['username']
-            password = values['password']
-            port = values['port']
-            transport = values['transport']
-            alias = values['alias']
-            autorefresh = values['autorefresh']
-            info = \
-                host, username, password, transport, port, alias, autorefresh
-            return_value.append(info)
-        return return_value
-
-    # ---------------- End Core Keywords ---------------- #
-
-    # ---------------- Start Analysis Keywords ---------- #
     def list_extensions(self, available='any', installed='any'):
-        """
-        The List Extensions keyword returns a list with the name of each
+        """List Extensions returns a list with the name of each
         extension present on the node.
 
         Arguments:
-        *available*: By default this is 'any', meaning the available status of the \
-        extension will not be used to filter to output.
+        *available*: By default this is 'any', meaning the available status of \
+        the extension will not be used to filter to output.
 
         Only return 'Available' extensions:
         | available=True
         Only return 'Not Available' extensions
         | available=False
 
-        *installed*: By default this is 'any', meaning the installed status of the \
-        extension will not be used to filter to output.
+        *installed*: By default this is 'any', meaning the installed status of \
+        the extension will not be used to filter to output.
 
         Only return 'Installed' extensions:
         | installed=True
@@ -387,73 +487,3 @@ class AristaLibrary:
                 filtered.append(ext)
 
             return filtered
-
-    def version_should_contain(self, version):
-        """This keyword validates the EOS version running on your node. It is
-        flexible is that it does not require an exact match - e.g. 4.14 == 4.14.0F.
-
-        Example:
-        | Version Should Contain | 4.14.0F |
-
-        This keyword evaluates the 'Software image version' from 'Show Version'
-        Example:
-        | veos-node# show version
-        | Arista vEOS
-        | Hardware version:
-        | Serial number:
-        | System MAC address:  0011.2233.4455
-        |
-        | *Software image version: 4.14.2F*
-        | Architecture:           i386
-        | Internal build version: 4.14.2F-2083164.4142F.1
-        | Internal build ID:      19fe6cb3-1777-40b6-a4e6-53875b30658c
-        |
-        | Uptime:                 21 hours and 59 minutes
-        | Total memory:           2028804 kB
-        | Free memory:            285504 kB
-        """
-        try:
-            out = self._connection.current.enable(['show version'])
-            version_number = str(out['result'][0]['version'])
-        except Exception as e:
-            raise e
-            return False
-        if not re.search(str(version), version_number):
-            raise AssertionError('Searched for %s, Found %s'
-                                 % (str(version), version_number))
-        return True
-
-    def enable(self, command):
-        try:
-            return self._connection.current.enable([command])
-        except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
-        except Exception as e:
-            raise AssertionError('eAPI execute command: {}'.format(e))
-
-    def get_startup_config(self):
-        try:
-            return self._connection.current.startup_config
-        except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
-        except Exception as e:
-            raise AssertionError('eAPI execute command: {}'.format(e))
-
-    def get_running_config(self):
-        try:
-            return self._connection.current.running_config
-        except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
-        except Exception as e:
-            raise AssertionError('eAPI execute command: {}'.format(e))
-
-    def config(self, commands):
-        try:
-            return self._connection.current.config(commands)
-        except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
-        except Exception as e:
-            raise AssertionError('eAPI execute command: {}'.format(e))
-
-    configure = config
-

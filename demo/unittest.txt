@@ -9,8 +9,9 @@ Documentation	This is a sample Robot Framework suite which takes advantage of th
 
 Library	AristaLibrary
 Library	Collections
+Library	Easter
 Suite Setup	Connect To Switch
-Suite Teardown	Clear All Connection
+Suite Teardown	Clear All Connections
 
 *** Variables ***
 ${TRANSPORT}	http
@@ -20,92 +21,170 @@ ${SW2_HOST}	localhost
 ${SW2_PORT}	2081
 ${USERNAME}	vagrant
 ${PASSWORD}	vagrant
+#${VERSION}	''
 
 *** Test Cases ***
-Log Version Using Run Cmds
+Robot Easter Egg
+	Run Keyword and Expect Error	*	None Shall Pass	Fred
+
+Run Commands and Log show version
+	[Documentation]	Test Run Cwhich executes EOS commands and returns a raw JSON dictionary.
+	...	Additionally, demonstrate several options for retrieving data out of the raw JSON.
+	[tags]	runCommands
+	${output}=	Run Commands	show version
+	Log	"show version returned: ${output}"
+	Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
+	Dictionary Should Contain Key	${output}	memTotal	msg="JSON from 'show version' did not contain expected results"
+	Log	"Connected to ${output['modelName']}, SN ${output['serialNumber']}, SysMAC ${output['systemMacAddress']} running ${output['version']}"
+	${match}	${group1}=	Should Match Regexp	${output['version']}	(\\d+\\.\\d+\\..*)\\-
+	Set Global Variable	\${VERSION}	${group1}
+
+Run Commands With a list of commands
+	[Documentation]	Test Run Commands which executes EOS commands and returns a raw JSON dictionary, this time passing a list of several commands.
+	[tags]	runCommands
+	@{commands}=	Create List	show version	show interfaces status connected
+	${output}=	Run Commands	${commands}
+	Log	"List of commands returned: ${output}" repr=True
+	Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
+
+Run Commands With Invalid Command
+	[Documentation]	Verify that we get an appropriate error raised when sending invalid commands.
+	[tags]	runCommands	negative
+	${err}=	Run Keyword And Expect Error	*invalid command*	Run Commands	show ver
+	Log	"'Expected ERROR was returned: ${err}"
+
+Run Cmds and Log Version
 	[Documentation]	Test Run Cmds which executes EOS commands and returns a raw JSON dictionary.
 	...	Additionally, demonstrate several options for retrieving data out of the raw JSON.
 	[tags]	runCmds
 	${output}=	Run Cmds	show version
 	Log	"show version returned: ${output}"
-	Should Not Be Equal	${output}	NONE	msg="Output of 'show version' was empty"
+	Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
 	Dictionary Should Contain Key	${output}	result	msg="JSON from 'show version' did not contain results"
 	#${results}=	Get From Dictionary	${output}	result
 	#${result}=	Get From List	${results}	0
 	${result}=	Get From List	${output['result']}	0
 	Log	"Connected to ${result['modelName']}, SN ${result['serialNumber']}, SysMAC ${result['systemMacAddress']} running ${result['version']}"
 
-Run a list of commands
+Run Cmds With a list of commands
 	[Documentation]	Test Run Cmds which executes EOS commands and returns a raw JSON dictionary, this time passing a list of several commands.
 	[tags]	runCmds
 	@{commands}=	Create List	show version	show interfaces status connected
 	${output}=	Run Cmds	${commands}
 	Log	"List of commands returned: ${output}" repr=True
-	Should Not Be Equal	${output}	NONE	msg="Output of 'show version' was empty"
+	Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
 
 Run Cmds With Invalid Command
 	[Documentation]	Verify that we get an appropriate error raised when sending invalid commands.
-	[tags]	runCmds
-	${err}=	Run Keyword And Expect Error	*	Run Cmds	show ver
+	...	TODO: Fix possible False Positive by not checking the actual error returned
+	[tags]	runCmds	negative
+	${err}=	Run Keyword And Expect Error	*CommandError*	Run Cmds	show ver
 	Log	"'Expected ERROR was returned: ${err}"
 
-Check Good Version Contains
+Version Should Contain - Good
 	[Documentation]	Positive test for version matching.
 	[tags]	versionCheck
-	Version Should Contain	4.14.3F
+	#Version Should Contain	4.14.3F
+	Version Should Contain	${VERSION}
 
-Check Bad Version Contains
+Version Should Contain - Negative
 	[Documentation]	Ensure a good error message is returned for a failed version check.
-	[tags]	versionCheck
-	Run Keyword And Expect Error	Searched for 4.14.2F, Found *	Version Should Contain	4.14.2F
+	[tags]	versionCheck	negative
+	#Run Keyword And Expect Error	Searched for 4.14.2F, Found *	Version Should Contain	4.14.2F
+	Run Keyword And Expect Error	Searched for 1.2.3Fred, Found *	Version Should Contain	1.2.3Fred
 
-Connect To Switch With Bad Password
+Connect To Switch With Incorrect Password
 	[Documentation]	Ensure useful error is raised during a failed connection setup
-	[tags]	connect	new
-	${err}=	Run Keyword And Expect Error	*	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password='fred'	port=${SW1_PORT}
+	[tags]	connect	negative
+	${err}=	Run Keyword And Expect Error	ConnectionError*	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password='fred'	port=${SW1_PORT}
 	#Log To Console	"Connection to switch1: ${switch1}"
 	Log	"'Expected ERROR was returned: ${err}"
 
-Connect To Switch With Bad Transport
+Connect To Switch With Invalid Transport
 	[Documentation]	Ensure useful error is raised during a failed connection setup
-	[tags]	connect	new
-	${err}=	Run Keyword And Expect Error	*	Connect To	host=${SW1_HOST}	transport='https'	username=${USERNAME}	password=${PASSWORD}	port=${SW1_PORT}
+	[tags]	connect	negative
+	${err}=	Run Keyword And Expect Error	TypeError*	Connect To	host=${SW1_HOST}	transport=file	username=${USERNAME}	password=${PASSWORD}	port=${SW1_PORT}
 	#Log To Console	"Connection to switch1: ${switch1}"
 	Log	"'Expected ERROR was returned: ${err}"
 
-Connect To Switch With Bad port
+Connect To Switch With Incorrect Transport
 	[Documentation]	Ensure useful error is raised during a failed connection setup
-	[tags]	connect	new
-	${err}=	Run Keyword And Expect Error	*	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password=${PASSWORD}	port=9999
+	[tags]	connect	negative
+	${err}=	Run Keyword And Expect Error	ConnectionError*	Connect To	host=${SW1_HOST}	transport=https	username=${USERNAME}	password=${PASSWORD}	port=${SW1_PORT}
+	#Log To Console	"Connection to switch1: ${switch1}"
+	Log	"'Expected ERROR was returned: ${err}"
+
+Connect To Switch With Incorrect port
+	[Documentation]	Ensure useful error is raised during a failed connection setup
+	[tags]	connect	negative
+	${err}=	Run Keyword And Expect Error	ConnectionError*	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password=${PASSWORD}	port=9999
 	#Log To Console	"Connection to switch1: ${switch1}"
 	Log	"Expected ERROR was returned: ${err}"
 
 Get Switch Info
-	[tags]	connect	switch	new
-	@{result}=	Get Switch
-	#Log To Console	${result}
+	[tags]	connect	switch
+	${previous}=	Change To Switch	1
+	${result}=	Get Switch
+	Log Dictionary	${result}
+	Should Not Be Equal	${result['index']}	${None}	msg="Bad index or alias"
+	Log	The switch connection uses port ${result['port']}
 
 Add A New Switch Connection
-	[tags]	connect	switch	new
-	#${switch2}=	Connect To	host=172.16.130.50	transport=http	username=admin	password=admin	port=${SW2_PORT}
-	${switch2}=	Connect To	host=${SW2_HOST}	transport=http	username=admin	password=admin	port=${SW2_PORT}
+	[tags]	connect	switch
+	${switch2}=	Connect To	host=${SW2_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password=${PASSWORD}	port=${SW2_PORT}
 	#Log To Console	${switch2}
 
+Add A Switch Connection with alias
+	[tags]	connect	switch
+	${switch2}=	Connect To	alias=my_alias	host=${SW2_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password=${PASSWORD}	port=${SW2_PORT}
+
 Get All Switches Info
-	[tags]	connect	switch	new
+	[tags]	connect	switch
 	@{result}=	Get Switches
+	Log List	${result}
 	Get Length	${result}
-	Length Should Be	${result}	2	msg="Did not find 2 connections in list."
+	#Length Should Be	${result}	6	msg="Did not find 6 connections in list."
+	Length Should Be	${result}	3	msg="Did not find 3 connections in list."
+	${first}=	Get From List	${result}	0
+	Log Dictionary	${first}
+	Log	The first switch connection uses port ${first['port']}
+
+Get Switch Info From Numeric Alias
+	[tags]	connect	switch
+	${result}=	Get Switch	index_or_alias=1
+	Log Dictionary	${result}
+	Log	The switch connection uses port ${result['port']}
+
+Get Switch Info From Text Alias
+	[tags]	connect	switch
+	${result}=	Get Switch	index_or_alias=my_alias
+	Log Dictionary	${result}
+	Log	The switch connection uses port ${result['port']}
+
+Get Switch Info From Non-existent Alias
+	[tags]	connect	switch	negative
+	#Run Keyword And Expect Error	ValueError*	Get Switch	index_or_alias=not_an_alias
+	${result}	Get Switch	index_or_alias=not_an_alias
+	Log Dictionary	${result}
+	Should Be Equal	${result['index']}	${None}
 
 Change Between Switches
-	[tags]	connect	switch	new
+	[tags]	connect	switch
 	@{result}=	Get Switches
-	#Change To Switch	@{result[0]}
-	${sw}=	Change To Switch	${SW1_HOST}
-	${output}=	Run Cmds	show version
-	#${sw}=	Change To Switch	172.16.130.50
-	${sw}=	Change To Switch	${SW2_HOST}
-	${output}=	Run Cmds	show version
+	Log List	${result}
+	${pre_info}=	Get Switch
+	Log Dictionary	${pre_info}
+	${previous}=	Change To Switch	1
+	${previous_info}=	Get Switch	index_or_alias=${previous}
+	Log Dictionary	${previous_info}
+	Dictionaries Should Be Equal	${pre_info}	${previous_info}
+	${new_info}=	Get Switch
+	Log Dictionary	${new_info}
+	${output}=	Run Commands	show version
+	${alias}=	Change To Switch	my_alias
+	${alias_info}=	Get Switch	index_or_alias=${alias}
+	Log Dictionary	${alias_info}
+	${output}=	Run Commands	show version
 
 
 *** Keywords ***

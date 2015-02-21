@@ -42,14 +42,15 @@ class AristaLibrary:
     """AristaLibrary - A Robot Framework Library for testing Arista EOS Devices.
 
     The AristaLibrary has been designed to simplify the task of configuration
-    validation and verification. If you are familiar with Command-API(eAPI), you
-    know that it's already fairly easy to extract configuration data from your
-    EOS nodes, but this library seeks to make configuration validation possible
-    for those who have no programming experience.  You'll notice that this library
-    utilizes [https://github.com/arista-eosplus/pyeapi|pyeapi], which greatly
-    simplifies the retreival and analysis of EOS configuration.  We encourage
-    you to participate in the development of this library by visiting
-    [https://github.com/arista-eosplus|AristaLibrary], hosted on Github.
+    validation and verification. If you are familiar with Command-API(eAPI),
+    you know that it's already fairly easy to extract configuration data from
+    your EOS nodes, but this library seeks to make configuration validation
+    possible for those who have no programming experience.  You'll notice that
+    this library utilizes [https://github.com/arista-eosplus/pyeapi|pyeapi],
+    which greatly simplifies the retreival and analysis of EOS configuration.
+    We encourage you to participate in the development of this library by
+    visiting [https://github.com/arista-eosplus|AristaLibrary], hosted on
+    Github.
 
     Note: This library has been built for Python only.
 
@@ -183,10 +184,11 @@ class AristaLibrary:
         """Change To Switch changes the active switch for all following keywords.
 
         Arguments:
-        - `index_or_alias`: The connection index (integer) or the alias (string)
-        of the desired connection.
+        - `index_or_alias`: The connection index (integer) or the alias
+        (string) of the desired connection.
 
-        Returns the index of the previous connection which can be stored for reuse.
+        Returns the index of the previous connection which can be stored for
+        reuse.
 
         Example:
         | ${uut1}=                | Connect To       | ...           |
@@ -213,7 +215,7 @@ class AristaLibrary:
         self.password = 'admin'
         self.connections = dict()
         # Since we don't really have anything to close, just delete entries.
-        #self._connection.close_all()
+        # self._connection.close_all()
         self._connection.empty_cache()
 
     def get_switch(self, index_or_alias=None):
@@ -231,9 +233,10 @@ class AristaLibrary:
 
         if not index_or_alias:
             index_or_alias = self._connection.current_index
-        #values = self.connections[index_or_alias]
+        # values = self.connections[index_or_alias]
         try:
-            values = self.connections[self._connection._resolve_alias_or_index(index_or_alias)]
+            values = self.connections
+            [self._connection._resolve_alias_or_index(index_or_alias)]
         except (ValueError, KeyError):
             values = {'index': None,
                       'alias': None
@@ -302,8 +305,8 @@ class AristaLibrary:
         # TODO: Jere update me
         """Run Commands allows you to run any eAPI command against your
         switch and then process the output using Robot's builtin keywords.  It
-        will automatically ensure the CLI is in `enable` mode prior to executing
-        the command(s).
+        will automatically ensure the CLI is in `enable` mode prior to
+        executing the command(s).
 
         Arguments:
         - `commands`: This must be the full eAPI command and not the short form
@@ -318,9 +321,9 @@ class AristaLibrary:
         Bad:
         | sho ver
 
-        - format: This is the format that the text will be returned from the API
-        request. The two options are 'text' and 'json'. Note that EOS does not
-        support a JSON response for all commands. Please refer to your EOS
+        - format: This is the format that the text will be returned from the
+        API request. The two options are 'text' and 'json'. Note that EOS does
+        not support a JSON response for all commands. Please refer to your EOS
         Command API documentation for more details.
 
         Examples:
@@ -345,6 +348,25 @@ class AristaLibrary:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
     def enable(self, command):
+        """
+        The Enable keyword lets you run a list of commands in enable mode.
+        It returns a list containing the list of commands, output of those
+        commands and the encoding used. It uses the pyeapi Node.enable()
+        function. If a command fails due to an encoding error, then the command
+        set will be re-issued individual with text encoding.
+
+        Arguments:
+        - `command`: This must be the full eAPI command and not the short form
+        that works on the CLI.  `commands` may be a single command or a list of
+        commands.  When passing a list to Run Commands, it should be given as a
+        scalar.
+
+
+        Example:
+        | @{list_v}=        | Create List | show version | show hostname |
+        | ${enable}=        | Enable      | ${list_v}    |               |
+        """
+        
         try:
             return self._connection.current.enable([command])
         except CommandError as e:
@@ -353,6 +375,14 @@ class AristaLibrary:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
     def get_startup_config(self):
+        """
+        The Get Startup Config keyword would retrieve the startup config from
+        the node as either a string or a list object.
+
+        Example:
+        | ${startup}=        | Get Startup Config |
+        """
+
         try:
             return self._connection.current.startup_config
         except CommandError as e:
@@ -361,6 +391,14 @@ class AristaLibrary:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
     def get_running_config(self):
+        """
+        The Get Startup Config keyword would retrieve the startup config from
+        the node as either a string or a list object.
+
+        Example:
+        | ${running}=        | Get Running Config |
+        """
+
         try:
             return self._connection.current.running_config
         except CommandError as e:
@@ -369,6 +407,24 @@ class AristaLibrary:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
     def config(self, commands):
+        """
+        The Config keyword lets you configures the node with the specified
+        commands. This method is used to send configuration commands to the
+        node.  It will take either a string or a list and prepend the necessary
+        commands to put the session into config mode.
+
+        Arguments:
+        - `command` (str, list): The commands to send to the node in config
+        mode.  If the commands argument is a string it will be cast to
+        a list.  The list of commands will also be prepended with the
+        necessary commands to put the session in config mode.
+
+
+        Example:
+        | @c{commands}=     | Create List | show version | show hostname |
+        | ${config}=        | Config      | ${commands}  |               |
+        """
+
         try:
             return self._connection.current.config(commands)
         except CommandError as e:
@@ -458,7 +514,8 @@ class AristaLibrary:
 
         if installed not in [True, False, 'forced', 'any']:
             raise AssertionError('Incorrect parameter value: %s. '
-                                 'Choose from [True|False|forced|any]' % installed)
+                                 'Choose from [True|False|forced|any]' %
+                                 installed)
 
         try:
             out = self._connection.current.enable(['show extensions'])
@@ -470,16 +527,18 @@ class AristaLibrary:
             extensions = out['result']['extensions']
             filtered = []
             for ext, data in extensions.items():
-                if available == True and data['presence'] != 'present':
+                if available and data['presence'] != 'present':
                     continue
-                elif available == False and data['presence'] == 'present':
+                elif not available and data['presence'] == 'present':
                     continue
 
-                if installed == True and data['status'] != 'installed':
+                if installed and data['status'] is not 'installed':
                     continue
-                elif installed == "forced" and data['status'] != 'forceInstalled':
+                elif installed == "forced" and data['status'] != \
+                        'forceInstalled':
                     continue
-                elif installed == False and data['status'] != 'notInstalled':
+                elif not installed and \
+                        data['status'] != 'notInstalled':
                     continue
 
                 # If all of the checks above pass then we can append the

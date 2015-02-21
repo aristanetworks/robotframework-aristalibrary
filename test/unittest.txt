@@ -186,6 +186,29 @@ Change Between Switches
 	Log Dictionary	${alias_info}
 	${output}=	Run Commands	show version
 
+Enable With One Command
+	[tags]	enable
+	${output}=	Enable	show version
+	Log	"show version returned: ${output}"
+	Log Dictionary	${output[0]}
+	#Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
+	#Dictionary Should Contain Key	${output}	memTotal	msg="JSON from 'show version' did not contain expected results"
+	#Log	"Connected to ${output['modelName']}, SN ${output['serialNumber']}, SysMAC ${output['systemMacAddress']} running ${output['version']}"
+
+Enable With a list of commands
+	[tags]	enable
+	@{commands}=	Create List	show version	show interfaces status connected
+	${output}=	Enable	${commands}
+	Log	"List of commands returned: ${output}" repr=True
+	Log Dictionary	${output[0]}
+	Log Dictionary	${output[1]}
+	#Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
+
+Enable With Invalid Command
+	[tags]	enable	negative
+	${err}=	Run Keyword And Expect Error	*invalid command*	Enable	show ver
+	Log	"'Expected ERROR was returned: ${err}"
+
 
 *** Keywords ***
 Connect To Switch

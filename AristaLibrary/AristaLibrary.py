@@ -368,7 +368,7 @@ class AristaLibrary:
         """
 
         try:
-            return self._connection.current.enable([command])
+            return self._connection.current.enable(command)
         except CommandError as e:
             raise AssertionError('eAPI CommandError: {}'.format(e))
         except Exception as e:

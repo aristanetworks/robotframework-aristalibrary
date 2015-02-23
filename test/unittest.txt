@@ -198,6 +198,7 @@ Enable With One Command
 Enable With a list of commands
 	[tags]	enable
 	@{commands}=	Create List	show version	show interfaces status connected
+	Log List	${commands}
 	${output}=	Enable	${commands}
 	Log	"List of commands returned: ${output}" repr=True
 	Log Dictionary	${output[0]}
@@ -209,6 +210,35 @@ Enable With Invalid Command
 	${err}=	Run Keyword And Expect Error	*invalid command*	Enable	show ver
 	Log	"'Expected ERROR was returned: ${err}"
 
+Get Startup Config
+	[tags]	config
+	${config}=	Get Startup Config
+	Log	"startup-config: ${config}"
+
+Get Running Config
+	[tags]	config
+	${config}=	Get Running Config
+	Log	"running-config: ${config}"
+
+Configure - Basic
+	[tags]	config
+	Change To Switch	1
+	Configure	hostname veos0
+	#Refresh
+	${config}=	Get Running Config
+	Should Match Regexp	${config}	hostname (.*)	msg="Failed to locate hostname configuration"
+	Log	"running-config: ${config}"
+
+Configure - List of Commands
+	[tags]	config
+	Change To Switch	1
+	@{cmds}=	Create List	interface ethernet1	ip address 10.1.1.0/31	description This is a test interface	shutdown	interface management1	description Management interface
+	Configure	default interface ethernet1
+	Configure	${cmds}
+	#Refresh
+	${config}=	Get Running Config
+	Should Match Regexp	${config}	hostname (.*)	msg="Failed to locate hostname configuration"
+	Log	"running-config: ${config}"
 
 *** Keywords ***
 Connect To Switch

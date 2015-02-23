@@ -44,7 +44,7 @@ Run Commands With a list of commands
 	[tags]	runCommands
 	@{commands}=	Create List	show version	show interfaces status connected
 	${output}=	Run Commands	${commands}
-	Log	"List of commands returned: ${output}" repr=True
+	Log	"List of commands returned: ${output}"
 	Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
 
 Run Commands With Invalid Command
@@ -61,8 +61,6 @@ Run Cmds and Log Version
 	Log	"show version returned: ${output}"
 	Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
 	Dictionary Should Contain Key	${output}	result	msg="JSON from 'show version' did not contain results"
-	#${results}=	Get From Dictionary	${output}	result
-	#${result}=	Get From List	${results}	0
 	${result}=	Get From List	${output['result']}	0
 	Log	"Connected to ${result['modelName']}, SN ${result['serialNumber']}, SysMAC ${result['systemMacAddress']} running ${result['version']}"
 
@@ -71,7 +69,7 @@ Run Cmds With a list of commands
 	[tags]	runCmds
 	@{commands}=	Create List	show version	show interfaces status connected
 	${output}=	Run Cmds	${commands}
-	Log	"List of commands returned: ${output}" repr=True
+	Log	"List of commands returned: ${output}"
 	Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
 
 Run Cmds With Invalid Command
@@ -189,21 +187,29 @@ Change Between Switches
 Enable With One Command
 	[tags]	enable
 	${output}=	Enable	show version
-	Log	"show version returned: ${output}"
-	Log Dictionary	${output[0]}
-	#Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
-	#Dictionary Should Contain Key	${output}	memTotal	msg="JSON from 'show version' did not contain expected results"
-	#Log	"Connected to ${output['modelName']}, SN ${output['serialNumber']}, SysMAC ${output['systemMacAddress']} running ${output['version']}"
+	Log List	${output}
+	Log Dictionary	${output[0]['result']}
+	Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
+	Dictionary Should Contain Key	${output[0]['result']}	memTotal	msg="JSON from 'show version' did not contain expected results"
+	@{items}=	Get Dictionary Items	${output[0]['result']}
+	${result}=	Create Dictionary	@{items}
+	Comment	Alternative method: ${result}=	Get From Dictionary	${output[0]}	result
+	Log	"Connected to ${result['modelName']}, SN ${result['serialNumber']}, SysMAC ${result['systemMacAddress']} running ${result['version']}"
 
 Enable With a list of commands
 	[tags]	enable
 	@{commands}=	Create List	show version	show interfaces status connected
 	Log List	${commands}
 	${output}=	Enable	${commands}
-	Log	"List of commands returned: ${output}" repr=True
+	Log List	${output}
 	Log Dictionary	${output[0]}
 	Log Dictionary	${output[1]}
-	#Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
+	Log Dictionary	${output[0]['result']}
+	Log Dictionary	${output[1]['result']}
+	Dictionary Should Contain Key	${output[0]['result']}	systemMacAddress	msg="JSON from 'show version' did not contain expected results"
+	Dictionary Should Contain Key	${output[1]['result']}	interfaceStatuses	msg="JSON from 'show interfaces status connected' did not contain expected results"
+	${result}=	Get From Dictionary	${output[0]}	result
+	Log	"Connected to ${result['modelName']}, SN ${result['serialNumber']}, SysMAC ${result['systemMacAddress']} running ${result['version']}"
 
 Enable With Invalid Command
 	[tags]	enable	negative
@@ -214,19 +220,30 @@ Get Startup Config
 	[tags]	config
 	${config}=	Get Startup Config
 	Log	"startup-config: ${config}"
+	Should Contain	${config}	Startup-config last modified
+	Should Contain	${config}	management api http-commands
 
 Get Running Config
 	[tags]	config
 	${config}=	Get Running Config
 	Log	"running-config: ${config}"
+	Should Contain	${config}	Command: show running-config
+	Should Contain	${config}	management api http-commands
 
-Configure - Basic
+Configure - Single Command
 	[tags]	config
 	Change To Switch	1
 	Configure	hostname veos0
-	#Refresh
 	${config}=	Get Running Config
-	Should Match Regexp	${config}	hostname (.*)	msg="Failed to locate hostname configuration"
+	Should Match Regexp	${config}	hostname veos0	msg="Failed to locate hostname configuration"
+	Log	"running-config: ${config}"
+
+Config (short version) - Single Command
+	[tags]	config
+	Change To Switch	1
+	Config	hostname veos0-test2
+	${config}=	Get Running Config
+	Should Match Regexp	${config}	hostname veos0-test2	msg="Failed to locate hostname configuration"
 	Log	"running-config: ${config}"
 
 Configure - List of Commands
@@ -235,14 +252,18 @@ Configure - List of Commands
 	@{cmds}=	Create List	interface ethernet1	ip address 10.1.1.0/31	description This is a test interface	shutdown	interface management1	description Management interface
 	Configure	default interface ethernet1
 	Configure	${cmds}
-	#Refresh
 	${config}=	Get Running Config
-	Should Match Regexp	${config}	hostname (.*)	msg="Failed to locate hostname configuration"
+	Should Match Regexp	${config}	ip address 10\\.1\\.1\\.0	msg="Failed to locate hostname configuration"
 	Log	"running-config: ${config}"
+
+Configure - Invalid Config Command
+	[tags]	config
+	Change To Switch	1
+	${err}=	Run Keyword And Expect Error	*invalid command*	Configure	int ma1
 
 *** Keywords ***
 Connect To Switch
-	[Documentation]	Establish connection to a switch which gets used by other test cases.
+	[Documentation]	Establish connection to a switch which gets used by test cases.
 	${switch1}=	Connect To	host=${SW1_HOST}	transport=${TRANSPORT}	username=${USERNAME}	password=${PASSWORD}	port=${SW1_PORT}
 	#Log To Console	"Connection to switch1: ${switch1}"
 

@@ -400,7 +400,8 @@ class AristaLibrary:
         """
 
         try:
-            return self._connection.current.running_config
+            #return self._connection.current.running_config
+            return self._connection.current.get_config(config='running-config', as_string=True)
         except CommandError as e:
             raise AssertionError('eAPI CommandError: {}'.format(e))
         except Exception as e:

@@ -235,7 +235,7 @@ class AristaLibrary:
             index_or_alias = self._connection.current_index
         # values = self.connections[index_or_alias]
         try:
-            values = self.connections
+            values = self.connections\
             [self._connection._resolve_alias_or_index(index_or_alias)]
         except (ValueError, KeyError):
             values = {'index': None,
@@ -366,7 +366,7 @@ class AristaLibrary:
         | @{list_v}=        | Create List | show version | show hostname |
         | ${enable}=        | Enable      | ${list_v}    |               |
         """
-        
+
         try:
             return self._connection.current.enable([command])
         except CommandError as e:

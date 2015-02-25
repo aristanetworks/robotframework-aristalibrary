@@ -422,7 +422,7 @@ class AristaLibrary:
 
 
         Example:
-        | @c{commands}=     | Create List | show version | show hostname |
+        | @{commands}=      | Create List | show version | show hostname |
         | ${config}=        | Config      | ${commands}  |               |
         """
 
@@ -547,3 +547,44 @@ class AristaLibrary:
                 filtered.append(ext)
 
             return filtered
+            
+    def refresh(self):
+        """Refreshes the instance config properties
+        This method will refresh the public running_config and startup_config
+        properites of the currently active switch.  Since the properties are 
+        lazily loaded, this method will clear the current internal instance 
+        variables.  One the next call the instance variables will be 
+        repopulated with the current config
+
+        Example:
+        | Connect To                   | host=192.0.2.50         | transport=http        | port=80         | username=myUser | password=secret | autorefresh=False |
+        | @{commands}=                 | Create List             | hostname newhostname  |                 |                 |                 |                   |
+        | ${config}=                   | Config                  | ${commands}           |                 |                 |                 |                   |
+        | ${before_refresh}=           | Get Running Config      |                       |                 |                 |                 |                   |
+        | LOG                          | ${before_refresh}       | level=DEBUG           |                 |                 |                 |                   |
+        | ${after_refresh}=            | Get Running Config      |                       |                 |                 |                 |                   |
+        | LOG                          | ${after_refresh}        | level=DEBUG           |                 |                 |                 |                   |
+
+        | ${before_refresh} = ! Command: show running-config
+        | ! device: vEOS1 (vEOS, EOS-4.14.0F)
+        | !
+        | ! boot system flash:/vEOS-4.14.0F.swi
+        | !
+        | alias ztpprep bash sudo /mnt/flash/ztpprep
+        | !
+        | event-handler configpush
+        |    trigger on-s...
+
+
+        | ${after_refresh} = ! Command: show running-config
+        | ! device: newhostname (vEOS, EOS-4.14.0F)
+        | !
+        | ! boot system flash:/vEOS-4.14.0F.swi
+        | !
+        | alias ztpprep bash sudo /mnt/flash/ztpprep
+        | !
+        | event-handler configpush
+        |    trigger on-s...
+        """
+
+        self._connection.current.refresh()

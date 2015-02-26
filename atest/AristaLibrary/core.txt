@@ -35,8 +35,9 @@ Run Commands and Log show version
 	Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
 	Dictionary Should Contain Key	${output}	memTotal	msg="JSON from 'show version' did not contain expected results"
 	Log	"Connected to ${output['modelName']}, SN ${output['serialNumber']}, SysMAC ${output['systemMacAddress']} running ${output['version']}"
-	${match}	${group1}=	Should Match Regexp	${output['version']}	(\\d+\\.\\d+\\..*)[\\-]?
+	${match}	${group1}=	Should Match Regexp	${output['version']}	(\\d+\\.\\d+\\.\\w*)[\\W]*
 	Set Global Variable	\${VERSION}	${group1}
+	Set Suite Metadata	EOS Version	${group1}	top=True
 
 Run Commands With a list of commands
 	[Documentation]	Test Run Commands which executes EOS commands and returns a raw JSON dictionary, this time passing a list of several commands.

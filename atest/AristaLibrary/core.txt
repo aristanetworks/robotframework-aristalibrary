@@ -27,7 +27,7 @@ Robot Easter Egg
 	Run Keyword and Expect Error	*	None Shall Pass	Fred
 
 Run Commands and Log show version
-	[Documentation]	Test Run Cwhich executes EOS commands and returns a raw JSON dictionary.
+	[Documentation]	Test Run Commands which executes EOS commands and returns a raw JSON dictionary.
 	...	Additionally, demonstrate several options for retrieving data out of the raw JSON.
 	[tags]	runCommands
 	${output}=	Run Commands	show version
@@ -37,6 +37,7 @@ Run Commands and Log show version
 	Log	"Connected to ${output['modelName']}, SN ${output['serialNumber']}, SysMAC ${output['systemMacAddress']} running ${output['version']}"
 	${match}	${group1}=	Should Match Regexp	${output['version']}	(\\d+\\.\\d+\\.\\w*)[\\W]*
 	Set Global Variable	\${VERSION}	${group1}
+	Set Suite Metadata	EOS Version	${group1}
 	Set Suite Metadata	EOS Version	${group1}	top=True
 
 Run Commands With a list of commands

@@ -261,6 +261,38 @@ Configure - Invalid Config Command
 	Change To Switch	1
 	${err}=	Run Keyword And Expect Error	*invalid command*	Configure	int ma1
 
+Refresh Running
+	[tags]	refresh
+	Configure	hostname veos
+	${config}=	Get Running Config
+	${match}	${oldname}=	Should Match Regexp	${config}	hostname (.*)	msg="Failed to locate pre-hostname"
+	Should Not Be Equal	${oldname}	veos-refresh
+	Configure	hostname veos-refresh
+	${config}=	Get Running Config
+	Should Match Regexp	${config}	hostname ${oldname}	msg="Failed to locate old hostname configuration before refresh"
+	Refresh
+	${config}=	Get Running Config
+	Should Match Regexp	${config}	hostname veos-refresh	msg="Failed to locate hostname configuration after refresh"
+	Configure	hostname ${oldname}
+
+Refresh Startup
+	[tags]	refresh
+	Configure	hostname veos
+	Enable	copy running-config startup-config
+	${config}=	Get Startup Config
+	${match}	${oldname}=	Should Match Regexp	${config}	hostname (.*)	msg="Failed to locate pre-hostname"
+	Should Not Be Equal	${oldname}	veos-refresh
+	Configure	hostname veos-refresh
+	${config}=	Get Startup Config
+	Should Match Regexp	${config}	hostname ${oldname}	msg="Failed to locate old hostname configuration before refresh"
+	Enable	copy running-config startup-config
+	Refresh
+	${config}=	Get Startup Config
+	Should Match Regexp	${config}	hostname veos-refresh	msg="Failed to locate hostname configuration after refresh"
+	Configure	hostname ${oldname}
+
+
+
 *** Keywords ***
 Connect To Switch
 	[Documentation]	Establish connection to a switch which gets used by test cases.

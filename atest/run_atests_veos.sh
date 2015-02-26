@@ -57,7 +57,7 @@ time pybot \
     --variable SW1_PORT:${HTTP_PORT_PREFIX}0 \
     --variable SW2_PORT:${HTTP_PORT_PREFIX}1 \
     --noncritical new \
-    robot/
+    AristaLibrary/
 #    --pythonpath=../AristaLibrary
 
 vagrant destroy --force

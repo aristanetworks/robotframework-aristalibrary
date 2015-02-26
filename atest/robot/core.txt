@@ -21,7 +21,6 @@ ${SW2_HOST}	localhost
 ${SW2_PORT}	2081
 ${USERNAME}	vagrant
 ${PASSWORD}	vagrant
-#${VERSION}	''
 
 *** Test Cases ***
 Robot Easter Egg
@@ -36,13 +35,15 @@ Run Commands and Log show version
 	Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
 	Dictionary Should Contain Key	${output}	memTotal	msg="JSON from 'show version' did not contain expected results"
 	Log	"Connected to ${output['modelName']}, SN ${output['serialNumber']}, SysMAC ${output['systemMacAddress']} running ${output['version']}"
-	${match}	${group1}=	Should Match Regexp	${output['version']}	(\\d+\\.\\d+\\..*)\\-
+	${match}	${group1}=	Should Match Regexp	${output['version']}	(\\d+\\.\\d+\\..*)[\\-]?
 	Set Global Variable	\${VERSION}	${group1}
 
 Run Commands With a list of commands
 	[Documentation]	Test Run Commands which executes EOS commands and returns a raw JSON dictionary, this time passing a list of several commands.
 	[tags]	runCommands
-	@{commands}=	Create List	show version	show interfaces status connected
+	@{commands}=	Create List
+	...	show version
+	...	show interfaces status connected
 	${output}=	Run Commands	${commands}
 	Log	"List of commands returned: ${output}"
 	Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
@@ -67,7 +68,9 @@ Run Cmds and Log Version
 Run Cmds With a list of commands
 	[Documentation]	Test Run Cmds which executes EOS commands and returns a raw JSON dictionary, this time passing a list of several commands.
 	[tags]	runCmds
-	@{commands}=	Create List	show version	show interfaces status connected
+	@{commands}=	Create List
+	...	show version
+	...	show interfaces status connected
 	${output}=	Run Cmds	${commands}
 	Log	"List of commands returned: ${output}"
 	Should Not Be Equal	${output}	${None}	msg="Output of 'show version' was empty"
@@ -198,7 +201,9 @@ Enable With One Command
 
 Enable With a list of commands
 	[tags]	enable
-	@{commands}=	Create List	show version	show interfaces status connected
+	@{commands}=	Create List
+	...	show version
+	...	show interfaces status connected
 	Log List	${commands}
 	${output}=	Enable	${commands}
 	Log List	${output}
@@ -249,7 +254,14 @@ Config (short version) - Single Command
 Configure - List of Commands
 	[tags]	config
 	Change To Switch	1
-	@{cmds}=	Create List	interface ethernet1	ip address 10.1.1.0/31	description This is a test interface	shutdown	interface management1	description Management interface
+	@{cmds}=	Create List
+	...	interface ethernet1
+	...	ip address 10.1.1.0/31
+	...	description This is a test interface
+	...	shutdown
+	...	interface management1
+	...	description Management interface
+	#@{cmds}=	Create List	interface ethernet1	ip address 10.1.1.0/31	description This is a test interface	shutdown	interface management1	description Management interface
 	Configure	default interface ethernet1
 	Configure	${cmds}
 	${config}=	Get Running Config

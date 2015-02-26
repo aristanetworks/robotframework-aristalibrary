@@ -47,7 +47,12 @@ fi
 
 echo "vEOS VMs are up.   Starting Robot Framework tests..."
 
+if [ not -d results ]; then
+    mkdir results
+fi
+
 time pybot \
+    --outputdir results \
     --variable TRANSPORT:${TEST_TRANSPORT} \
     --variable SW1_PORT:${HTTP_PORT_PREFIX}0 \
     --variable SW2_PORT:${HTTP_PORT_PREFIX}1 \

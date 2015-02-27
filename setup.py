@@ -39,7 +39,7 @@ CURDIR = dirname(abspath(__file__))
 
 #from AristaLibrary import __version__, __author__
 execfile(join(CURDIR, 'AristaLibrary', 'version.py'))
-with open(join(CURDIR, 'README.md')) as readme:
+with open(join(CURDIR, 'README.rst')) as readme:
     README = readme.read()
 with open(join(CURDIR, 'requirements.txt')) as requirements:
     INSTALL_REQUIREMENTS = requirements.read()
@@ -52,7 +52,7 @@ setup(
     author='Arista EOS+ Consulting Services',
     author_email='eosplus-dev@arista.com',
     url='https://github.com/arista-eosplus/AristaLibrary',
-    download_url='https://github.com/arista-eosplus/AristaLibrary/tarball/%s' % VERSION,
+    download_url='https://github.com/arista-eosplus/robotframework-aristalibrary/tarball/%s' % VERSION,
     license='BSD-3',
     platforms='any',
     keywords='robotframework testing testautomation arista eos eapi pyeapi',

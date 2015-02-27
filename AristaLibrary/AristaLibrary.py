@@ -472,6 +472,82 @@ class AristaLibrary:
                                  % (str(version), version_number))
         return True
 
+    def list_extensions(self, available='any', installed='any'):
+        """List Extensions returns a list with the name of each
+        extension present on the node.
+
+        Arguments:
+        *available*: By default this is 'any', meaning the available status of \
+        the extension will not be used to filter to output.
+
+        Only return 'Available' extensions:
+        | available=True
+        Only return 'Not Available' extensions
+        | available=False
+
+        *installed*: By default this is 'any', meaning the installed status of \
+        the extension will not be used to filter to output.
+
+        Only return 'Installed' extensions:
+        | installed=True
+        Only return 'Not Installed' extensions
+        | installed=False
+        Only return extensions which were installed by force:
+        | installed="forced"
+
+        Sample 'Show Version' output from the CLI:
+
+        | Name                                       Version/Release           Status extension
+        | ------------------------------------------ ------------------------- ------ ----
+        | eos-puppet-conf-0.1-1.eos4.noarch.rpm      0.1/1.eos4                A, I      1
+        | puppet-3.7.1-3-ruby2.swix                  3.7.1/1.eos4              A, I     14
+        | ruby-2.0.0-1.swix                          2.0.0.353/16.fc14         A, I     11
+        |
+        | A: available | NA: not available | I: installed | NI: not installed | F: forced
+
+        Note: If you want all data pertaining to the extensions use the Get
+        Extensions keyword.
+        """
+        # Confirm parameter values are acceptable
+        if available not in [True, False, 'any']:
+            raise AssertionError('Incorrect parameter value: %s. '
+                                 'Choose from [True|False|any]' % available)
+
+        if installed not in [True, False, 'forced', 'any']:
+            raise AssertionError('Incorrect parameter value: %s. '
+                                 'Choose from [True|False|forced|any]' %
+                                 installed)
+
+        try:
+            out = self._connection.current.enable(['show extensions'])
+            out = out[0]
+        except Exception as e:
+            raise e
+
+        if out['encoding'] == 'json':
+            extensions = out['result']['extensions']
+            filtered = []
+            for ext, data in extensions.items():
+                if available and data['presence'] != 'present':
+                    continue
+                elif not available and data['presence'] == 'present':
+                    continue
+
+                if installed and data['status'] is not 'installed':
+                    continue
+                elif installed == "forced" and data['status'] != \
+                        'forceInstalled':
+                    continue
+                elif not installed and \
+                        data['status'] != 'notInstalled':
+                    continue
+
+                # If all of the checks above pass then we can append the
+                # extension to the list
+                filtered.append(ext)
+
+            return filtered
+
     def refresh(self):
         """Refreshes the instance config properties
         This method will refresh the public running_config and startup_config

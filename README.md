@@ -15,7 +15,7 @@ See the [AristaLibrary](http://arista-eosplus.github.io/robotframework-aristalib
 
 ## Example
 
-"""
+```robot
 # -*- coding: robot -*-
 # :setf robot
 # :set noexpandtab
@@ -36,8 +36,8 @@ ${SW1_HOST} localhost
 ${SW1_PORT} 2080
 ${SW2_HOST} localhost
 ${SW2_PORT} 2081
-${USERNAME} vagrant
-${PASSWORD} vagrant
+${USERNAME} apiuser
+${PASSWORD} donttell
 
 *** Test Cases ***
 Ping Test
@@ -63,7 +63,11 @@ Connect To Switches
 Configure IP Int
     [Arguments] ${switch}   ${interface}    ${ip}
     Change To Switch    ${switch}
-    Configure   default interface ${interface}
-    @{cmds}=    Create List default interface ${interface}  interface ${interface}  no switchportip address ${ip}   no shutdown
+    @{cmds}=    Create List
+    ... default interface ${interface}
+    ... interface ${interface}
+    ... no switchport
+    ... ip address ${ip}
+    ... no shutdown
     Configure   ${cmds}
-"""
+```

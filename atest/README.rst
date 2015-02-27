@@ -33,7 +33,6 @@ interfaces, and setup port-forwarding to access eAPI. Next, it will execute
 pybot, passing it connection information to each EOS node.   Finally, it will
 destroy the vEOS VMs.
 
-
 EOS pre-configuration expectations
 ----------------------------------
 
@@ -55,4 +54,57 @@ on each switch prior to starting ``pybot``::
     management api http-commands
        no shutdown
 
+Advanced acceptance test running
+--------------------------------
+
+`<run_atests_veos.sh>`__ accepts numerous ENV variables and CLI options
+to customize the test process::
+
+    Usage:
+    ./run_atests_veos.sh <options>
+        -h  Show this help info
+        -b <box>    Vagrant box image to test.  Use 'vagrant box list' for values
+        -u  Bringup vagrant boxes and exit
+        -r  Run Robot tests and exit
+        -d  Destroy vagrant boxes and exit
+
+    ENV variables:
+        PYTHONPATH  Include locatoin of AristaLibrary and pyeapi
+        VM_BOX  The name of a vagrant box to test. -b <box> will override this.
+        VM_BOX_URL  The URL to a vagrant box to test
+        TEST_TRANSPORT=[http|https]
+        HTTP_PORT_PREFIX=208    ports 2080 and 2081
+        HTTPS_PORT_PREFIX=244   ports 2440 and 2441
+                  Range: 103 - 6553   (gives actual starting ports of 1030-65530)
+
+    Examples:
+        HTTP_PORT_PREFIX=123 ./run_atests_veos.sh
+        VM_BOX=vEOS_4.14.6M ./run_atests_veos.sh
+
+
+You can use the VM_BOX and VM_BOX_URL options to tell the test runner to use
+arbitrary vEOS images either by name or by a URL to boxes stored in a central
+repository::
+
+    VM_BOX=vEOS_4.14.6M ./run_atests_veos.sh
+    # OR
+    ./run_atests_veos.sh -b vEOS_4.14.6M
+    # OR
+    VM_BOX_URL="http://server.example.com/vagrant/vEOS_4.14.3F_virtualbox.box" ./run_atests_veos.sh
+
+When developing or troubleshooting tests, one might wish to setup the VMs once,
+then perform multiple Robot test runs before destroying them.  The cli options
+fully support this process::
+
+    # Up the desired version VMs
+    ./run_atests_veos.sh -b vEOS_4.14.6M -u
+
+    # Run Robot test suites
+    ./run_atests_veos.sh -r
+    # edit tests...
+    ./run_atests_veos.sh -r
+    ...
+
+    # Destroy the VMs
+    ./run_atests_veos.sh -d
 

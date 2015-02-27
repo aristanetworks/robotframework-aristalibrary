@@ -39,7 +39,7 @@ CURDIR = dirname(abspath(__file__))
 
 #from AristaLibrary import __version__, __author__
 execfile(join(CURDIR, 'AristaLibrary', 'version.py'))
-with open(join(CURDIR, 'README.md')) as readme:
+with open(join(CURDIR, 'README.rst')) as readme:
     README = readme.read()
 with open(join(CURDIR, 'requirements.txt')) as requirements:
     INSTALL_REQUIREMENTS = requirements.read()

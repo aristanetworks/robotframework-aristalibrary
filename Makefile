@@ -55,3 +55,5 @@ systest: clean
 
 docs:
 	$(PYTHON) doc/generateHTML.py
+
+travis: clean pep8 pyflakes

@@ -5,9 +5,12 @@ Contributing to AristaLibrary
 Releasing a new version
 -----------------------
 
-1. Update the release notes at TBD
 
-1.5 Ensure docs are up to date
+1. Update the VERSION identifier
+
+   Edit ``AristaLibrary/version.py`` then commit changes
+
+2. Ensure docs are up to date
 
    * make docs
    * git checkout gh-pages
@@ -15,13 +18,9 @@ Releasing a new version
    * push
    * git checkout release-branch
 
-2. Update the VERSION identifier
-
-   Edit ``AristaLibrary/version.py`` then commit changes
-
 3. Tag the release branch
 
-   ``git tag -a x.y -m "Release x.y" && git push --tags
+   ``git tag -a vX.Y -m "Release X.Y" && git push --tags
 
 4. Create the sdist package
 
@@ -31,7 +30,11 @@ Releasing a new version
 
    ``python setup.py sdist upload``
 
-6. Publish news
+6. Generate a GitHub Release and include release notes
+
+   `https://github.com/arista-eosplus/robotframework-aristalibrary/releases`
+
+7. Publish news
 
    * EOS Central
    * Email
@@ -40,4 +43,4 @@ Releasing a new version
 Contact
 -------
 
-Please contact eosplus-dev@arista.com with any questions or comments on this library.
+Contact eosplus-dev@arista.com with any questions or comments on this library.

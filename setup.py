@@ -52,7 +52,7 @@ setup(
     author='Arista EOS+ Consulting Services',
     author_email='eosplus-dev@arista.com',
     url='https://github.com/arista-eosplus/AristaLibrary',
-    download_url='https://github.com/arista-eosplus/AristaLibrary/tarball/%s' % VERSION,
+    download_url='https://github.com/arista-eosplus/robotframework-aristalibrary/tarball/%s' % VERSION,
     license='BSD-3',
     platforms='any',
     keywords='robotframework testing testautomation arista eos eapi pyeapi',

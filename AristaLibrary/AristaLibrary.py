@@ -64,7 +64,9 @@ class AristaLibrary:
     | pip install robotframework-aristalibrary
 
     or install from source
-    | <add source code link here once moved to GitHub>
+    | git clone https://github.com/arista-eosplus/robotframework-aristalibrary.git
+    | cd robotframework-aristalibrary/
+    | python setup.py install
 
     = Examples =
     == Connecting to a test node ==

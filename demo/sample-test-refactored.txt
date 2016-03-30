@@ -28,10 +28,10 @@ Ping Test
 	Configure IP Int	1	ethernet1	10.1.1.0/31
 	Configure IP Int	2	ethernet1	10.1.1.1/31
 
-	${output}=	Enable	ping 10.1.1.0
+	${output}=	Enable	ping 10.1.1.0	text
 	${result}=	Get From Dictionary	${output[0]}	result
 	Log	${result}
-	${match}	${group1}=	Should Match Regexp	${result['messages'][0]}	(\\d+)% packet loss
+	${match}	${group1}=	Should Match Regexp	${result['output']}	(\\d+)% packet loss
 	Should Be Equal As Integers	${group1}	0	msg="Packets lost percent not zero!!!"
 
 *** Keywords ***

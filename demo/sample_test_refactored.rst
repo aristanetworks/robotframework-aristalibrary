@@ -114,4 +114,4 @@ Test Cases
         ${match}    ${group1}=    Should Match Regexp    ${result['output']}    (\\d+)% packet loss
         Should Be Equal As Integers    ${group1}    0    msg="Packets lost percent not zero!!!"
 
-There you go...  Tests, embreded within documentation!
+There you go...  Tests, embeded within documentation!

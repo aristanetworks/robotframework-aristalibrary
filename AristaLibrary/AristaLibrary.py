@@ -38,7 +38,7 @@ from robot.utils import ConnectionCache
 import re
 
 
-class AristaLibrary:
+class AristaLibrary(object):
     """AristaLibrary - A Robot Framework Library for testing Arista EOS Devices.
 
     The AristaLibrary has been designed to simplify the task of configuration

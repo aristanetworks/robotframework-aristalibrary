@@ -10,8 +10,9 @@ Sample Test Example in RST documentation
 .. contents::
     :local:
 
-This example demonstrates how RobotFramework tests can be embeded in
-ReStructuredText documentation.
+This example demonstrates how RobotFramework tests can be embedded in
+ReStructuredText documentation.  If you are converting an existing
+tab-separated test suite, convert tabs to 4-spaces within the RST file.
 
 The testcases should be in `code:: robotframework` blocks.
 
@@ -114,4 +115,4 @@ Test Cases
         ${match}    ${group1}=    Should Match Regexp    ${result['output']}    (\\d+)% packet loss
         Should Be Equal As Integers    ${group1}    0    msg="Packets lost percent not zero!!!"
 
-There you go...  Tests, embeded within documentation!
+There you go...  Tests, embedded within documentation!

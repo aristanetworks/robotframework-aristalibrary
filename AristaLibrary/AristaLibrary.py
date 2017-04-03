@@ -49,7 +49,7 @@ class AristaLibrary:
     this library utilizes [https://github.com/arista-eosplus/pyeapi|pyeapi],
     which greatly simplifies the retreival and analysis of EOS configuration.
     We encourage you to participate in the development of this library by
-    visiting [https://github.com/arista-eosplus|AristaLibrary], hosted on
+    visiting [https://github.com/aristanetworks/robotframework-aristalibrary|AristaLibrary], hosted on
     Github.
 
     Note: This library has been built for Python only.
@@ -64,7 +64,7 @@ class AristaLibrary:
     | pip install robotframework-aristalibrary
 
     or install from source
-    | git clone https://github.com/arista-eosplus/robotframework-aristalibrary.git
+    | git clone https://github.com/aristanetworks/robotframework-aristalibrary.git
     | cd robotframework-aristalibrary/
     | python setup.py install
 

@@ -13,7 +13,7 @@ Prerequisites
 -------------
 
 * `Robot Framework <http://robotframework.org/>`
-* `PyEAPI <https://pypi.python.org/pypi/pyeapi>` (`GitHub <https://github.com/aristanetworks/pyeapi>`)
+* `PyEAPI <https://pypi.python.org/pypi/pyeapi>` (`GitHub <https://github.com/arista-eosplus/pyeapi>`)
 * `Arista EOS <http://www.arista.com>` 4.12 or later
 * Python 2.7
 

@@ -47,7 +47,7 @@ Releasing a new version
 
 8. Generate a GitHub Release and include release notes
 
-   `https://github.com/arista-eosplus/robotframework-aristalibrary/releases`
+   `https://github.com/aristanetworks/robotframework-aristalibrary/releases`
 
 9. Publish news
 

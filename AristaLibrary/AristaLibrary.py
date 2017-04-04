@@ -49,7 +49,7 @@ class AristaLibrary:
     this library utilizes [https://github.com/arista-eosplus/pyeapi|pyeapi],
     which greatly simplifies the retreival and analysis of EOS configuration.
     We encourage you to participate in the development of this library by
-    visiting [https://github.com/arista-eosplus|AristaLibrary], hosted on
+    visiting [https://github.com/aristanetworks/robotframework-aristalibrary|AristaLibrary], hosted on
     Github.
 
     Note: This library has been built for Python only.
@@ -64,7 +64,7 @@ class AristaLibrary:
     | pip install robotframework-aristalibrary
 
     or install from source
-    | git clone https://github.com/arista-eosplus/robotframework-aristalibrary.git
+    | git clone https://github.com/aristanetworks/robotframework-aristalibrary.git
     | cd robotframework-aristalibrary/
     | python setup.py install
 
@@ -237,11 +237,12 @@ class AristaLibrary:
             index_or_alias = self._connection.current_index
         # values = self.connections[index_or_alias]
         try:
-            values = self.connections[self._connection._resolve_alias_or_index(index_or_alias)]
+            values = self.connections\
+            [self._connection._resolve_alias_or_index(index_or_alias)]
         except (ValueError, KeyError):
             values = {'index': None,
                       'alias': None
-                      }
+                     }
         return values
 
     def get_switches(self):
@@ -348,7 +349,7 @@ class AristaLibrary:
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
-    def enable(self, command):
+    def enable(self, commands, encoding='text'):
         """
         The Enable keyword lets you run a list of commands in enable mode.
         It returns a list containing the list of commands, output of those
@@ -368,12 +369,16 @@ class AristaLibrary:
         | ${enable}=        | Enable      | ${list_v}    |               |
         """
 
+        if isinstance(commands, basestring):
+            commands = [str(commands)]
+
         try:
-            return self._connection.current.enable(command)
+            return self._connection.current.enable(commands, encoding)
         except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
+            raise AssertionError('eAPI enable CommandError:'
+                                 ' {} {}'.format(e, commands))
         except Exception as e:
-            raise AssertionError('eAPI execute command: {}'.format(e))
+            raise AssertionError('eAPI enable execute command: {}'.format(e))
 
     def get_startup_config(self):
         """
@@ -387,7 +392,7 @@ class AristaLibrary:
         try:
             return self._connection.current.startup_config
         except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
+            raise AssertionError('Pyeapi error getting startup-config: {}'.format(e))
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
@@ -404,7 +409,7 @@ class AristaLibrary:
             return self._connection.current.running_config
             #return self._connection.current.get_config(config='running-config', as_string=True)
         except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
+            raise AssertionError('Pyeapi error getting running-config: {}'.format(e))
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
@@ -427,10 +432,14 @@ class AristaLibrary:
         | ${config}=        | Config      | ${commands}  |               |
         """
 
+        if isinstance(commands, basestring):
+            commands = [commands]
+
         try:
             return self._connection.current.config(commands)
         except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
+            raise AssertionError('eAPI config CommandError:'
+                                 ' {} {}'.format(e, commands))
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 

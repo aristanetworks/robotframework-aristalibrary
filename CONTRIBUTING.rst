@@ -1,12 +1,18 @@
 Contributing to AristaLibrary
 =============================
 
-AristaLibrary welcomes suggestions, comments, and contributions from anyone.  Please use GitHub Issues to file issues, whether bugs or requests for enhancements.  
+AristaLibrary welcomes suggestions, comments, and contributions from anyone.
+Please use GitHub Issues to file issues, whether bugs or requests for
+enhancements.  
 
 Contributing Keywords, etc.
 ---------------------------
 
-Please keep keywords as small and reusable as possible and follow the general style of other Robot Framework libraries.   Additionally, this library is heavily based on `pyeapi<http://github.com/arista-eosplus/pyeapi>` and future keywords should continue that trend.  There may be cases where enhancing pyeapi is appropriate to enable better keywords in AristaLibrary.
+Please keep keywords as small and reusable as possible and follow the general
+style of other Robot Framework libraries.   Additionally, this library is
+heavily based on `pyeapi<http://github.com/arista-eosplus/pyeapi>` and future
+keywords should continue that trend.  There may be cases where enhancing pyeapi
+is appropriate to enable better keywords in AristaLibrary.
 
 Before submitting a pull request to AristaLibrary:
 

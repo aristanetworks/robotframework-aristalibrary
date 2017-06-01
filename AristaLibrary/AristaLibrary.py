@@ -237,8 +237,8 @@ class AristaLibrary(object):
             index_or_alias = self._connection.current_index
         # values = self.connections[index_or_alias]
         try:
-            values = self.connections[self._connection._resolve_alias_or_index(
-                index_or_alias)]
+            values = self.connections[
+                self._connection._resolve_alias_or_index(index_or_alias)]
         except (ValueError, KeyError):
             values = {'index': None,
                       'alias': None
@@ -408,7 +408,8 @@ class AristaLibrary(object):
         try:
             return self._connection.current.running_config
         except CommandError as e:
-            raise AssertionError('Pyeapi error getting running-config: {}'.format(e))
+            raise AssertionError('Pyeapi error getting running-config: {}'
+                                 .format(e))
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 

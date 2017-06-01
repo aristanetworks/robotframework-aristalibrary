@@ -58,3 +58,6 @@ DEBUG.html
 
 # Vagrant working dir
 .vagrant
+
+# Virtualenv
+venv

@@ -20,11 +20,14 @@ Before submitting a pull request to AristaLibrary:
 * Make code changes
 * Include/update docstrings
   * ``make docs`` will update doc/AristaLibrary.html
-* Run ``make pep8 && make pyflakes``
-* Add tests to test/unittest.txt (Robot Framework)
-  * ``pybot --pythonpath Aristalibrary --dryrun test/unittest.txt``
+* Run ``make flake8 && make pep8 && make pyflakes``
+* Add acceptance tests to atest/AristaLibrary/core.txt (Robot Framework)
+  * ``pybot --pythonpath Aristalibrary --dryrun atest/AristaLibrary/core.txt``
 * Ensure all tests pass when running against EOS (or vEOS).
-  * If you have a vEOS vagrant box and VirtualBox, then run ``cd test/; run_robot_tests_veos.sh``.  This will spin up 2 vEOS nodes, interconnected on Et1, then execute the tests with pybot.
+  * If you have a vEOS vagrant box and VirtualBox, then run
+    ``cd test/; run_robot_tests_veos.sh``.  This will spin up 2 vEOS nodes,
+    interconnected on Et1, then execute the tests with pybot.
+    See ``cd test/; run_robot_tests_veos.sh --help`` for options.
 * Rebase to latest develop branch
 * Submit a Pull Reuest
 
@@ -32,4 +35,5 @@ Before submitting a pull request to AristaLibrary:
 Contact
 -------
 
-Please contact eosplus-dev@arista.com with any questions or comments on this library.
+Please contact eosplus-dev@arista.com with any questions or comments on this
+library.

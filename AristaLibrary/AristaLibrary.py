@@ -161,10 +161,13 @@ class AristaLibrary(object):
         try:
             ver = self._connection.current.enable(
                 ['show version'])[0]['result']
-            mesg = "Created connection to {}://{}:{}@{}:{}/command-api: model: {}, serial: {}, systemMAC: {}, version: {}, lastBootTime: {}".format(
-                transport, username, '****', host, port,
-                ver['modelName'], ver['serialNumber'], ver['systemMacAddress'],
-                ver['version'], ver['bootupTimestamp'])
+            mesg = "Created connection to {}://{}:{}@{}:{}/command-api: "\
+                "model: {}, serial: {}, systemMAC: {}, version: {}, "\
+                "lastBootTime: {}".format(
+                    transport, username, '****', host, port,
+                    ver['modelName'], ver['serialNumber'],
+                    ver['systemMacAddress'],
+                    ver['version'], ver['bootupTimestamp'])
             logger.write(mesg, 'INFO', False)
         except Exception as e:
             raise e
@@ -266,7 +269,7 @@ class AristaLibrary(object):
 
     # ---------------- Start Analysis Keywords ---------- #
 
-    def run_cmds(self, commands, format='json'):
+    def run_cmds(self, commands, encoding='json'):
         """Run Cmds allows low-level access to run any eAPI command against your
         switch and then process the output using Robot's builtin keywords.
 
@@ -281,19 +284,27 @@ class AristaLibrary(object):
         Bad:
         | sho ver
 
-        - `format` is the format that the text will be returned from the API
+        - `encoding` is the format of the response will be returned from the API
         request. The two options are 'text' and 'json'. Note that EOS does not
         support a JSON response for all commands. Please refer to your EOS
         Command API documentation for more details.
 
         Examples:
-        | ${json_dict}= | Run Cmds | show version                |             |
-        | ${raw_text}=  | Run Cmds | show interfaces description | format=text |
+        | ${json_dict}= | Run Cmds | show version                |               |
+        | ${raw_text}=  | Run Cmds | show interfaces description | encoding=text |
         """
+        if isinstance(commands, basestring):
+            commands = [str(commands)]
+        elif isinstance(commands, list):
+            # Handle Python2 unicode strings
+            for idx, command in enumerate(commands):
+                if isinstance(command, unicode):
+                    commands[idx] = str(command)
+
         try:
             commands = make_iterable(commands)
             client = self.connections[self._connection.current_index]['conn']
-            return client.execute(commands, format)
+            return client.execute(commands, encoding)
         except CommandError as e:
             error = ""
             # This just added by Peter in pyeapi 10 Feb 2015
@@ -303,7 +314,7 @@ class AristaLibrary(object):
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
-    def run_commands(self, command, all_info=False):
+    def run_commands(self, commands, all_info=False, encoding='json'):
         # TODO: Jere update me
         """Run Commands allows you to run any eAPI command against your
         switch and then process the output using Robot's builtin keywords.  It
@@ -331,15 +342,24 @@ class AristaLibrary(object):
         Examples:
         | ${json_dict}= | Run Commands | show version                |               |
         | ${raw_text}=  | Run Commands | show interfaces description | all_info=True |
+        | @{text}=      | show version | show interfaces Ethernet 1  | encoding=text |
         | @{commands}=  | show version | show interfaces Ethernet 1  |               |
         | ${json_dict}= | Run Commands | ${commands}                 |               |
         """
+        if isinstance(commands, basestring):
+            commands = [str(commands)]
+        elif isinstance(commands, list):
+            # Handle Python2 unicode strings
+            for idx, command in enumerate(commands):
+                if isinstance(command, unicode):
+                    commands[idx] = str(command)
+
         try:
             if all_info:
                 return self._connection.current.enable(
-                    [command])
+                    [commands], encoding)
             return self._connection.current.enable(
-                [command])[0]['result']
+                [commands], encoding)[0]['result']
         except CommandError as e:
             error = ""
             # This just added by Peter to pyeapi 10 Feb 2015
@@ -349,7 +369,7 @@ class AristaLibrary(object):
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
-    def enable(self, commands, encoding='text'):
+    def enable(self, commands, encoding='json'):
         """
         The Enable keyword lets you run a list of commands in enable mode.
         It returns a list containing the list of commands, output of those
@@ -371,6 +391,11 @@ class AristaLibrary(object):
 
         if isinstance(commands, basestring):
             commands = [str(commands)]
+        elif isinstance(commands, list):
+            # Handle Python2 unicode strings
+            for idx, command in enumerate(commands):
+                if isinstance(command, unicode):
+                    commands[idx] = str(command)
 
         try:
             return self._connection.current.enable(commands, encoding)
@@ -573,7 +598,7 @@ class AristaLibrary(object):
         | ${before_refresh}=           | Get Running Config      |                       |                 |                 |                 |                   |
         | LOG                          | ${before_refresh}       | level=DEBUG           |                 |                 |                 |                   |
         | ${after_refresh}=            | Get Running Config      |                       |                 |                 |                 |                   |
-        | LOG                          | ${after_refresh}        | level=DEBUG           |                 |                 |                 |                   |
+        | LOG                          | ${after_refresh}        | level=DEBUG           |                 |                 |                 |                   |  # NOQA
 
         | ${before_refresh} = ! Command: show running-config
         | ! device: vEOS1 (vEOS, EOS-4.14.0F)

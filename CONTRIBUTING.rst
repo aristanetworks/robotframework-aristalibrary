@@ -25,9 +25,9 @@ Before submitting a pull request to AristaLibrary:
   * ``pybot --pythonpath Aristalibrary --dryrun atest/AristaLibrary/core.txt``
 * Ensure all tests pass when running against EOS (or vEOS).
   * If you have a vEOS vagrant box and VirtualBox, then run
-    ``cd test/; run_robot_tests_veos.sh``.  This will spin up 2 vEOS nodes,
+    ``cd atest/; run_atests_veos.sh``.  This will spin up 2 vEOS nodes,
     interconnected on Et1, then execute the tests with pybot.
-    See ``cd test/; run_robot_tests_veos.sh --help`` for options.
+    See ``cd atest/; run_atests_veos.sh --help`` for options.
 * Rebase to latest develop branch
 * Submit a Pull Reuest
 

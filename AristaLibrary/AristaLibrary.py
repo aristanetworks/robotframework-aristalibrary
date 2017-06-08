@@ -438,6 +438,27 @@ class AristaLibrary(object):
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
+    def get_config_block(self, parent):
+        """
+        Returns a configuration block from the current running-config
+        based on a parent entry line in the configuration.
+
+        Arguments:
+        - parent: A text string identifying the parent block to be returned
+
+        Examples:
+        | ${block} = | Get Block | ${parent_string} |
+        | ${block} = | Get Block | route-map mymap1 permit 10 |
+        | ${block} = | Get Block | ip access-list standard myACL |
+        """
+
+        try:
+            return self._connection.current.section(parent)
+        except CommandError as e:
+            raise AssertionError('eAPI CommandError: {}'.format(e))
+        except Exception as e:
+            raise AssertionError('eAPI execute command: {}'.format(e))
+
     def config(self, commands):
         """
         The Config keyword lets you configures the node with the specified

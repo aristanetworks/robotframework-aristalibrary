@@ -226,16 +226,37 @@ Enable With Invalid Command
 Get Startup Config
 	[tags]	config
 	${config}=	Get Startup Config
-	Log	"startup-config: ${config}"
+	Log	"startup-config:\n\n${config}"
 	Should Contain	${config}	Startup-config last modified
 	Should Contain	${config}	management api http-commands
 
 Get Running Config
 	[tags]	config
 	${config}=	Get Running Config
-	Log	"running-config: ${config}"
+	Log	"running-config:\n\n${config}"
 	Should Contain	${config}	Command: show running-config
 	Should Contain	${config}	management api http-commands
+
+Get Config Block Present
+	[tags]	config
+	${config}=	Get Config Block	^management api http-commands$
+	Log	"running-config:\n\n${config}"
+	Should Contain	${config}	management api http-commands
+	Should Match Regexp	${config}	(?m)^\\s+(no )?protocol http(s)?$
+	Should Match Regexp	${config}	(?m)^\\s+(no )?protocol unix-socket$
+	Should Match Regexp	${config}	(?m)^\\s+(no )?protocol https mac hmac-sha1$
+
+Get Config Block Absent
+	[tags]	config
+	${config}=	Get Config Block	^management api http-commands$
+	Log	"running-config:\n\n${config}"
+	Should Not Contain	${config}	^hostname
+	Should Not Contain	${config}	^interface
+
+Get Config Block No Match
+	[tags]	config	negative
+	${err}=	Run Keyword And Expect Error	*config section not found	Get Config Block	^Invalid config block$
+	Log	"'Expected ERROR was returned: ${err}"
 
 Configure - Single Command
 	[tags]	config
@@ -243,7 +264,7 @@ Configure - Single Command
 	Configure	hostname veos0
 	${config}=	Get Running Config
 	Should Match Regexp	${config}	hostname veos0	msg="Failed to locate hostname configuration"
-	Log	"running-config: ${config}"
+	Log	"running-config:\n\n${config}"
 
 Config (short version) - Single Command
 	[tags]	config
@@ -251,7 +272,7 @@ Config (short version) - Single Command
 	Config	hostname veos0-test2
 	${config}=	Get Running Config
 	Should Match Regexp	${config}	hostname veos0-test2	msg="Failed to locate hostname configuration"
-	Log	"running-config: ${config}"
+	Log	"running-config:\n\n${config}"
 
 Configure - List of Commands
 	[tags]	config
@@ -268,7 +289,7 @@ Configure - List of Commands
 	Configure	${cmds}
 	${config}=	Get Running Config
 	Should Match Regexp	${config}	ip address 10\\.1\\.1\\.0	msg="Failed to locate hostname configuration"
-	Log	"running-config: ${config}"
+	Log	"running-config:\n\n${config}"
 
 Configure - Invalid Config Command
 	[tags]	config

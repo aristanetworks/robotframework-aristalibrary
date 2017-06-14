@@ -419,7 +419,7 @@ class AristaLibrary(object):
         | ${startup}=        | Get Startup Config |
         | ${startup}=        | Get Startup Config | section=^management api http-commands$
         | ${startup}=        | Get Startup Config | section=^interface Ethernet1
-        | ${startup}=        | Get Startup Config | ^interface Ethernet2        Example:
+        | ${startup}=        | Get Startup Config | ^interface Ethernet2
         """
 
         if section:

@@ -230,6 +230,24 @@ Get Startup Config
 	Should Contain	${config}	Startup-config last modified
 	Should Contain	${config}	management api http-commands
 
+Get Startup Config Section
+	[tags]	config
+	${config}=	Get Startup Config	^management api http-commands$
+	Log	"startup-config:\n\n${config}"
+	# Result should contain section header and lines indented by 3 spaces
+	Should Match Regexp	${config}	(?m)^management api http-commands
+	Should Match Regexp	${config}	(?m)^\\s{3}(no )?protocol http?$
+	Should Match Regexp	${config}	(?m)^\\s{3}(no )?protocol https?$
+	Should Match Regexp	${config}	(?m)^\\s{3}(no )?shutdown$
+	# Result should not contain hostname or interface sections
+	Should Not Match Regexp	${config}	(?m)^hostname
+	Should Not Match Regexp	${config}	(?m)^interface
+
+Get Startup Config Section No Match
+	[tags]	config	negative
+	${err}=	Run Keyword And Expect Error	*config section not found	Get Startup Config	^logging level
+	Log	"'Expected ERROR was returned: ${err}"
+
 Get Running Config
 	[tags]	config
 	${config}=	Get Running Config
@@ -237,25 +255,22 @@ Get Running Config
 	Should Contain	${config}	Command: show running-config
 	Should Contain	${config}	management api http-commands
 
-Get Config Block Present
+Get Running Config Section
 	[tags]	config
-	${config}=	Get Config Block	^management api http-commands$
+	${config}=	Get Running Config	^management api http-commands$
 	Log	"running-config:\n\n${config}"
-	Should Contain	${config}	management api http-commands
-	Should Match Regexp	${config}	(?m)^\\s+(no )?protocol http(s)?$
-	Should Match Regexp	${config}	(?m)^\\s+(no )?protocol unix-socket$
-	Should Match Regexp	${config}	(?m)^\\s+(no )?protocol https mac hmac-sha1$
+	# Result should contain section header and lines indented by 3 spaces
+	Should Match Regexp	${config}	(?m)^management api http-commands
+	Should Match Regexp	${config}	(?m)^\\s{3}(no )?protocol http(s)?$
+	Should Match Regexp	${config}	(?m)^\\s{3}(no )?protocol unix-socket$
+	Should Match Regexp	${config}	(?m)^\\s{3}(no )?protocol https mac hmac-sha1$
+	# Result should not contain hostname or interface sections
+	Should Not Match Regexp	${config}	(?m)^hostname
+	Should Not Match Regexp	${config}	(?m)^interface
 
-Get Config Block Absent
-	[tags]	config
-	${config}=	Get Config Block	^management api http-commands$
-	Log	"running-config:\n\n${config}"
-	Should Not Contain	${config}	^hostname
-	Should Not Contain	${config}	^interface
-
-Get Config Block No Match
+Get Running Config Section No Match
 	[tags]	config	negative
-	${err}=	Run Keyword And Expect Error	*config section not found	Get Config Block	^Invalid config block$
+	${err}=	Run Keyword And Expect Error	*config section not found	Get Running Config	^Invalid config section$
 	Log	"'Expected ERROR was returned: ${err}"
 
 Configure - Single Command

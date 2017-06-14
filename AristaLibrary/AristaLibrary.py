@@ -405,59 +405,74 @@ class AristaLibrary(object):
         except Exception as e:
             raise AssertionError('eAPI enable execute command: {}'.format(e))
 
-    def get_startup_config(self):
+    def get_startup_config(self, section=None):
         """
-        The Get Startup Config keyword would retrieve the startup config from
-        the node as either a string or a list object.
+        The Get Startup Config keyword retrieves the startup config from
+        the node as a string.
+
+        Arguments:
+        - 'section' (regex): If supplied, the section regex will be matched
+        to return the indicated block of the startup config. If omitted,
+        Get Startup Config returns the entire startup config.
 
         Example:
         | ${startup}=        | Get Startup Config |
+        | ${startup}=        | Get Startup Config | section=^management api http-commands$
+        | ${startup}=        | Get Startup Config | section=^interface Ethernet1
+        | ${startup}=        | Get Startup Config | ^interface Ethernet2        Example:
         """
 
-        try:
-            return self._connection.current.startup_config
-        except CommandError as e:
-            raise AssertionError('Pyeapi error getting startup-config: {}'.format(e))
-        except Exception as e:
-            raise AssertionError('eAPI execute command: {}'.format(e))
+        if section:
+            try:
+                return self._connection.current.section(
+                    section, config='startup_config')
+            except CommandError as e:
+                raise AssertionError('Pyeapi error getting startup-config: {}'
+                                     .format(e))
+            except Exception as e:
+                raise AssertionError('eAPI execute command: {}'.format(e))
+        else:
+            try:
+                return self._connection.current.startup_config
+            except CommandError as e:
+                raise AssertionError('Pyeapi error getting startup-config: {}'
+                                     .format(e))
+            except Exception as e:
+                raise AssertionError('eAPI execute command: {}'.format(e))
 
-    def get_running_config(self):
+    def get_running_config(self, section=None):
         """
-        The Get Startup Config keyword would retrieve the startup config from
-        the node as either a string or a list object.
+        The Get Running Config keyword retrieves the running config from
+        the node as a string.
+
+        Arguments:
+        - 'section' (regex): If supplied, the section regex will be matched
+        to return the indicated block of the running config. If omitted,
+        Get Running Config returns the entire running config.
 
         Example:
         | ${running}=        | Get Running Config |
+        | ${running}=        | Get Running Config | section=^management api http-commands$
+        | ${running}=        | Get Running Config | section=^interface Ethernet1
+        | ${running}=        | Get Running Config | ^interface Ethernet2
         """
 
-        try:
-            return self._connection.current.running_config
-        except CommandError as e:
-            raise AssertionError('Pyeapi error getting running-config: {}'
-                                 .format(e))
-        except Exception as e:
-            raise AssertionError('eAPI execute command: {}'.format(e))
-
-    def get_config_block(self, parent):
-        """
-        Returns a configuration block from the current running-config
-        based on a parent entry line in the configuration.
-
-        Arguments:
-        - parent: A text string identifying the parent block to be returned
-
-        Examples:
-        | ${block} = | Get Block | ${parent_string} |
-        | ${block} = | Get Block | route-map mymap1 permit 10 |
-        | ${block} = | Get Block | ip access-list standard myACL |
-        """
-
-        try:
-            return self._connection.current.section(parent)
-        except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
-        except Exception as e:
-            raise AssertionError('eAPI execute command: {}'.format(e))
+        if section:
+            try:
+                return self._connection.current.section(section)
+            except CommandError as e:
+                raise AssertionError('Pyeapi error getting running-config: {}'
+                                     .format(e))
+            except Exception as e:
+                raise AssertionError('eAPI execute command: {}'.format(e))
+        else:
+            try:
+                return self._connection.current.running_config
+            except CommandError as e:
+                raise AssertionError('Pyeapi error getting running-config: {}'
+                                     .format(e))
+            except Exception as e:
+                raise AssertionError('eAPI execute command: {}'.format(e))
 
     def config(self, commands):
         """

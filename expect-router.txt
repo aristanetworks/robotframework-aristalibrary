@@ -1,0 +1,57 @@
+# -*- coding: robot -*-
+# :setf robot
+# :set noexpandtab
+*** Settings ***
+Documentation	Show examples of Expect keyword using the AristaExpectConfig
+...				library to Expect items in the configuration
+...
+...	Run with:
+...	pybot --pythonpath=AristaLibrary --noncritical new expect-router.txt
+
+Library	AristaLibrary
+Library	AristaExpect.AristaExpectConfig
+Library	Collections
+
+Suite Setup		Connect To Switches
+# Suite Teardown	Clear All Connections
+
+*** Variables ***
+${TRANSPORT}	http
+${SW1_HOST}		switch1
+${SW1_PORT}		80
+${USERNAME}		admin
+${PASSWORD}		admin
+
+*** Test Cases ***
+Initialize the testbed by sending the desired command to the switch
+	[Documentation]		Initialize the tests by sending the required
+	...					command to the switch
+	Initialize Tests On Switch
+
+	# The 'show interfaces ethernet 1' command returns a dictionary with
+	# a common nested key of { 'interfaces': { 'Ethernet1': { ... } } }
+	# Assign a KEYSTRING variable to handle the first two keys
+	# to avoid writing them out every time
+	Set Suite Variable		${KEYSTRING}		interfaces Ethernet1
+
+Validate 'Expect config to contain <ip routing>'
+	Expect		config		to contain		ip routing
+
+Validate 'Expect config to not contain <no ip routing>'
+	Expect		config		to not contain	no ip routing
+
+Validate 'Expect config to contain <invalid config line>' fails
+	Expect		config		contains		invalid config line
+
+
+*** Keywords ***
+Connect To Switches
+	[Documentation]	Establish connection to a switch which gets used by test cases.
+	Clear All Connections
+
+	Connect To	host=${SW1_HOST}
+	...			transport=${TRANSPORT}
+	...			username=${USERNAME}
+	...			password=${PASSWORD}
+	...			port=${SW1_PORT}
+

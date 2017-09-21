@@ -244,9 +244,10 @@ class AristaLibrary(object):
                 self._connection._resolve_alias_or_index(index_or_alias)
             ]
         except (ValueError, KeyError):
-            values = {'index': None,
-                      'alias': None
-                     }
+            values = {
+                'index': None,
+                'alias': None
+            }
         return values
 
     def get_switches(self):

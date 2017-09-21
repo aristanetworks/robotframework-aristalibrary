@@ -30,7 +30,7 @@ Upgrade using::
 
 To install from source::
 
-    git clone https://github.com/arista-eosplus/robotframework-aristalibrary.git
+    git clone https://github.com/aristanetworks/robotframework-aristalibrary.git
     cd robotframework-aristalibrary
     # Optionally, checkout the development branch"
     git checkout develop"
@@ -39,7 +39,7 @@ To install from source::
 Keyword Documentation
 ---------------------
 
-See the `AristaLibrary <http://arista-eosplus.github.io/robotframework-aristalibrary/AristaLibrary.html>` keyword documentation.
+See the `AristaLibrary <http://aristanetworks.github.io/robotframework-aristalibrary/AristaLibrary.html>` keyword documentation.
 
 Example Robot Test
 ------------------
@@ -106,7 +106,7 @@ Example Robot Test
 Release Notes
 -------------
 
-Release notes are available in the GitHub `releases <https://github.com/arista-eosplus/robotframework-aristalibrary/releases>`.
+Release notes are available in the GitHub `releases <https://github.com/aristanetworks/robotframework-aristalibrary/releases>`.
 
 Support and Contacts
 --------------------

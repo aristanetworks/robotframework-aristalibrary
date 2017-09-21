@@ -29,17 +29,11 @@
 # IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
-import pyeapi
-from pyeapi.eapilib import CommandError
-from pyeapi.utils import make_iterable
-from robot.api import logger
-from robot.utils import ConnectionCache
 import re
-from robot.api.deco import keyword
-import AristaLibrary
 from robot.libraries.BuiltIn import BuiltIn
 
 import XXX
+
 
 class AristaExpect(object):
     ROBOT_LIBRARY_SCOPE = 'TEST_SUITE'
@@ -56,7 +50,7 @@ class AristaExpect(object):
         # to be used as a key for storing the results
 
         if (switch_index):
-            switch_list = [ self.arista_lib.get_switch(switch_index) ]
+            switch_list = [self.arista_lib.get_switch(switch_index)]
         else:
             switch_list = self.arista_lib.get_switches()
 
@@ -152,10 +146,8 @@ class AristaExpect(object):
     def _startswith(self, key, returned, value):
         return self._starts_with(key, returned, value)
 
-
     def _begins_with(self, key, returned, value):
         return self._starts_with(key, returned, value)
-
 
     def _beginswith(self, key, returned, value):
         return self._starts_with(key, returned, value)
@@ -180,13 +172,14 @@ class AristaExpect(object):
     def _to_contain(self, key, returned, value):
         return self._contains(key, returned, value)
 
-    # ---------------- Keyword 'does not contain' and equivalents ---------------- #
+    # ------------- Keyword 'does not contain' and equivalents ------------- #
 
     def _does_not_contain(self, key, returned, value):
         if isinstance(returned, str) or isinstance(returned, unicode):
             if value in returned:
                 raise RuntimeError(
-                        'Key: \'{}\', Found: \'{}\', Expected to not contain: \'{}\''
+                        'Key: \'{}\', Found: \'{}\''
+                        ', Expected to not contain: \'{}\''
                         .format(key, returned, value)
                         )
         elif isinstance(returned, list):
@@ -211,4 +204,3 @@ class AristaExpectConfig(AristaExpect):
 
     def __init__(self):
         AristaExpect.__init__(self, 'show running-config all')
-

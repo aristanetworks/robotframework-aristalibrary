@@ -263,7 +263,6 @@ Get Running Config Section
 	Should Match Regexp	${config}	(?m)^management api http-commands
 	Should Match Regexp	${config}	(?m)^\\s{3}(no )?protocol http(s)?$
 	Should Match Regexp	${config}	(?m)^\\s{3}(no )?protocol unix-socket$
-	Should Match Regexp	${config}	(?m)^\\s{3}(no )?protocol https mac hmac-sha1$
 	# Result should not contain hostname or interface sections
 	Should Not Match Regexp	${config}	(?m)^hostname
 	Should Not Match Regexp	${config}	(?m)^interface

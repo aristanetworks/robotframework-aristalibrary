@@ -38,7 +38,7 @@ from robot.utils import ConnectionCache
 import re
 
 
-class AristaLibrary:
+class AristaLibrary(object):
     """AristaLibrary - A Robot Framework Library for testing Arista EOS Devices.
 
     The AristaLibrary has been designed to simplify the task of configuration
@@ -161,10 +161,13 @@ class AristaLibrary:
         try:
             ver = self._connection.current.enable(
                 ['show version'])[0]['result']
-            mesg = "Created connection to {}://{}:{}@{}:{}/command-api: model: {}, serial: {}, systemMAC: {}, version: {}, lastBootTime: {}".format(
-                transport, username, '****', host, port,
-                ver['modelName'], ver['serialNumber'], ver['systemMacAddress'],
-                ver['version'], ver['bootupTimestamp'])
+            mesg = "Created connection to {}://{}:{}@{}:{}/command-api: "\
+                "model: {}, serial: {}, systemMAC: {}, version: {}, "\
+                "lastBootTime: {}".format(
+                    transport, username, '****', host, port,
+                    ver['modelName'], ver['serialNumber'],
+                    ver['systemMacAddress'],
+                    ver['version'], ver['bootupTimestamp'])
             logger.write(mesg, 'INFO', False)
         except Exception as e:
             raise e
@@ -237,7 +240,8 @@ class AristaLibrary:
             index_or_alias = self._connection.current_index
         # values = self.connections[index_or_alias]
         try:
-            values = self.connections[self._connection._resolve_alias_or_index(index_or_alias)]
+            values = self.connections[
+                self._connection._resolve_alias_or_index(index_or_alias)]
         except (ValueError, KeyError):
             values = {'index': None,
                       'alias': None
@@ -265,7 +269,7 @@ class AristaLibrary:
 
     # ---------------- Start Analysis Keywords ---------- #
 
-    def run_cmds(self, commands, format='json'):
+    def run_cmds(self, commands, encoding='json'):
         """Run Cmds allows low-level access to run any eAPI command against your
         switch and then process the output using Robot's builtin keywords.
 
@@ -280,19 +284,27 @@ class AristaLibrary:
         Bad:
         | sho ver
 
-        - `format` is the format that the text will be returned from the API
+        - `encoding` is the format of the response will be returned from the API
         request. The two options are 'text' and 'json'. Note that EOS does not
         support a JSON response for all commands. Please refer to your EOS
         Command API documentation for more details.
 
         Examples:
-        | ${json_dict}= | Run Cmds | show version                |             |
-        | ${raw_text}=  | Run Cmds | show interfaces description | format=text |
+        | ${json_dict}= | Run Cmds | show version                |               |
+        | ${raw_text}=  | Run Cmds | show interfaces description | encoding=text |
         """
+        if isinstance(commands, basestring):
+            commands = [str(commands)]
+        elif isinstance(commands, list):
+            # Handle Python2 unicode strings
+            for idx, command in enumerate(commands):
+                if isinstance(command, unicode):
+                    commands[idx] = str(command)
+
         try:
             commands = make_iterable(commands)
             client = self.connections[self._connection.current_index]['conn']
-            return client.execute(commands, format)
+            return client.execute(commands, encoding)
         except CommandError as e:
             error = ""
             # This just added by Peter in pyeapi 10 Feb 2015
@@ -302,7 +314,7 @@ class AristaLibrary:
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
-    def run_commands(self, command, all_info=False):
+    def run_commands(self, commands, all_info=False, encoding='json'):
         # TODO: Jere update me
         """Run Commands allows you to run any eAPI command against your
         switch and then process the output using Robot's builtin keywords.  It
@@ -330,15 +342,24 @@ class AristaLibrary:
         Examples:
         | ${json_dict}= | Run Commands | show version                |               |
         | ${raw_text}=  | Run Commands | show interfaces description | all_info=True |
+        | @{text}=      | show version | show interfaces Ethernet 1  | encoding=text |
         | @{commands}=  | show version | show interfaces Ethernet 1  |               |
         | ${json_dict}= | Run Commands | ${commands}                 |               |
         """
+        if isinstance(commands, basestring):
+            commands = [str(commands)]
+        elif isinstance(commands, list):
+            # Handle Python2 unicode strings
+            for idx, command in enumerate(commands):
+                if isinstance(command, unicode):
+                    commands[idx] = str(command)
+
         try:
             if all_info:
                 return self._connection.current.enable(
-                    [command])
+                    [commands], encoding)
             return self._connection.current.enable(
-                [command])[0]['result']
+                [commands], encoding)[0]['result']
         except CommandError as e:
             error = ""
             # This just added by Peter to pyeapi 10 Feb 2015
@@ -348,7 +369,7 @@ class AristaLibrary:
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
-    def enable(self, command):
+    def enable(self, commands, encoding='json'):
         """
         The Enable keyword lets you run a list of commands in enable mode.
         It returns a list containing the list of commands, output of those
@@ -368,45 +389,90 @@ class AristaLibrary:
         | ${enable}=        | Enable      | ${list_v}    |               |
         """
 
-        try:
-            return self._connection.current.enable(command)
-        except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
-        except Exception as e:
-            raise AssertionError('eAPI execute command: {}'.format(e))
+        if isinstance(commands, basestring):
+            commands = [str(commands)]
+        elif isinstance(commands, list):
+            # Handle Python2 unicode strings
+            for idx, command in enumerate(commands):
+                if isinstance(command, unicode):
+                    commands[idx] = str(command)
 
-    def get_startup_config(self):
+        try:
+            return self._connection.current.enable(commands, encoding)
+        except CommandError as e:
+            raise AssertionError('eAPI enable CommandError:'
+                                 ' {} {}'.format(e, commands))
+        except Exception as e:
+            raise AssertionError('eAPI enable execute command: {}'.format(e))
+
+    def get_startup_config(self, section=None):
         """
-        The Get Startup Config keyword would retrieve the startup config from
-        the node as either a string or a list object.
+        The Get Startup Config keyword retrieves the startup config from
+        the node as a string.
+
+        Arguments:
+        - 'section' (regex): If supplied, the section regex will be matched
+        to return the indicated block of the startup config. If omitted,
+        Get Startup Config returns the entire startup config.
 
         Example:
         | ${startup}=        | Get Startup Config |
+        | ${startup}=        | Get Startup Config | section=^management api http-commands$
+        | ${startup}=        | Get Startup Config | section=^interface Ethernet1
+        | ${startup}=        | Get Startup Config | ^interface Ethernet2
         """
 
-        try:
-            return self._connection.current.startup_config
-        except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
-        except Exception as e:
-            raise AssertionError('eAPI execute command: {}'.format(e))
+        if section:
+            try:
+                return self._connection.current.section(
+                    section, config='startup_config')
+            except CommandError as e:
+                raise AssertionError('Pyeapi error getting startup-config: {}'
+                                     .format(e))
+            except Exception as e:
+                raise AssertionError('eAPI execute command: {}'.format(e))
+        else:
+            try:
+                return self._connection.current.startup_config
+            except CommandError as e:
+                raise AssertionError('Pyeapi error getting startup-config: {}'
+                                     .format(e))
+            except Exception as e:
+                raise AssertionError('eAPI execute command: {}'.format(e))
 
-    def get_running_config(self):
+    def get_running_config(self, section=None):
         """
-        The Get Startup Config keyword would retrieve the startup config from
-        the node as either a string or a list object.
+        The Get Running Config keyword retrieves the running config from
+        the node as a string.
+
+        Arguments:
+        - 'section' (regex): If supplied, the section regex will be matched
+        to return the indicated block of the running config. If omitted,
+        Get Running Config returns the entire running config.
 
         Example:
         | ${running}=        | Get Running Config |
+        | ${running}=        | Get Running Config | section=^management api http-commands$
+        | ${running}=        | Get Running Config | section=^interface Ethernet1
+        | ${running}=        | Get Running Config | ^interface Ethernet2
         """
 
-        try:
-            return self._connection.current.running_config
-            #return self._connection.current.get_config(config='running-config', as_string=True)
-        except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
-        except Exception as e:
-            raise AssertionError('eAPI execute command: {}'.format(e))
+        if section:
+            try:
+                return self._connection.current.section(section)
+            except CommandError as e:
+                raise AssertionError('Pyeapi error getting running-config: {}'
+                                     .format(e))
+            except Exception as e:
+                raise AssertionError('eAPI execute command: {}'.format(e))
+        else:
+            try:
+                return self._connection.current.running_config
+            except CommandError as e:
+                raise AssertionError('Pyeapi error getting running-config: {}'
+                                     .format(e))
+            except Exception as e:
+                raise AssertionError('eAPI execute command: {}'.format(e))
 
     def config(self, commands):
         """
@@ -427,10 +493,14 @@ class AristaLibrary:
         | ${config}=        | Config      | ${commands}  |               |
         """
 
+        if isinstance(commands, basestring):
+            commands = [commands]
+
         try:
             return self._connection.current.config(commands)
         except CommandError as e:
-            raise AssertionError('eAPI CommandError: {}'.format(e))
+            raise AssertionError('eAPI config CommandError:'
+                                 ' {} {}'.format(e, commands))
         except Exception as e:
             raise AssertionError('eAPI execute command: {}'.format(e))
 
@@ -564,7 +634,7 @@ class AristaLibrary:
         | ${before_refresh}=           | Get Running Config      |                       |                 |                 |                 |                   |
         | LOG                          | ${before_refresh}       | level=DEBUG           |                 |                 |                 |                   |
         | ${after_refresh}=            | Get Running Config      |                       |                 |                 |                 |                   |
-        | LOG                          | ${after_refresh}        | level=DEBUG           |                 |                 |                 |                   |
+        | LOG                          | ${after_refresh}        | level=DEBUG           |                 |                 |                 |                   |  # NOQA
 
         | ${before_refresh} = ! Command: show running-config
         | ! device: vEOS1 (vEOS, EOS-4.14.0F)

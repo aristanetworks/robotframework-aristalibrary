@@ -1,0 +1,11 @@
+check-manifest
+pep8
+pyflakes
+coverage
+nose
+pdoc
+pytest
+setuptools>=35
+testtools
+unittest2
+

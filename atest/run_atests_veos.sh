@@ -80,7 +80,7 @@ usage () {
     echo "        -d\tDestroy vagrant boxes and exit"
     echo
     echo "    ENV variables:"
-    echo "        PYTHONPATH\tInclude locatoin of AristaLibrary and pyeapi"
+    echo "        PYTHONPATH\tInclude location of AristaLibrary and pyeapi"
     echo "        VM_BOX\tThe name of a vagrant box to test. -b <box> will override this."
     echo "        VM_BOX_URL\tThe URL to a vagrant box to test"
     echo "        TEST_TRANSPORT=[http|https]"

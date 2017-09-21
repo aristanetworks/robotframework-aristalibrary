@@ -178,15 +178,15 @@ class AristaExpect(object):
         if isinstance(returned, str) or isinstance(returned, unicode):
             if value in returned:
                 raise RuntimeError(
-                        'Key: \'{}\', Found: \'{}\''
-                        ', Expected to not contain: \'{}\''
-                        .format(key, returned, value)
-                        )
+                    'Key: \'{}\', Found: \'{}\''
+                    ', Expected to not contain: \'{}\''
+                    .format(key, returned, value)
+                )
         elif isinstance(returned, list):
             if value in returned:
                 raise RuntimeError(
-                        'Found \'{}\' in \'{}\''.format(value, key)
-                        )
+                    'Found \'{}\' in \'{}\''.format(value, key)
+                )
         else:
             raise RuntimeError('Unable to determine type of return value')
 

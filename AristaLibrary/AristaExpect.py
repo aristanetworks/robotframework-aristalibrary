@@ -221,8 +221,6 @@ class AristaExpect(object):
         else:
             switch_list = self.arista_lib.get_switches()
 
-        import XXX
-        XXX.file('start of initialize', cmd)
         for switch in switch_list:
             index = switch['index']
             run_cmd = None
@@ -250,9 +248,6 @@ class AristaExpect(object):
 
             self.arista_lib.change_to_switch(index)
 
-            import XXX
-            XXX.file(cmd, run_cmd)
-
             if self.import_cmd and re.match(r'^show running-config all', self.import_cmd):
                 # If command is show running-config all, get the running
                 # config from the AristaLibrary object
@@ -263,8 +258,6 @@ class AristaExpect(object):
                 reply = self.arista_lib.enable(run_cmd)
                 self.result[index] = reply[0]['result']
 
-        import XXX
-        XXX.file(self.result, self.switch_cmd, run_cmd)
         return self.result
 
     def initialize_tests_on_switches(self, cmd=None):

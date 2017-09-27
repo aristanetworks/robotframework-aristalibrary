@@ -33,70 +33,108 @@ import re
 
 from robot.libraries.BuiltIn import BuiltIn
 
-AE_ERR = 'AristaExpect: '    # AristaExpect Error prefix
+AE_ERR = 'AristaExpect: '       # AristaExpect Error prefix
 
 
 class AristaExpect(object):
     """AristaExpect - A Robot Framework library for testing Arista EOS
     devices using an Expect keyword.
 
-    This library contains two formats for using the Expect keyword for
-    testing Arista EOS devices. The first format is for testing the output
-    of single EOS command, such as a `show` command. The second method
-    is for testing the output of the EOS `show running-config all` command,
-    and is useful for checking configurations that do not have a built-in
-    command to retrieve settings, such as whether ip routing is enabled or
-    disabled.
+    This library facilitates data validation of EOS command output using
+    an Expect keyword format. The library manages the collection of the
+    command output from a set of EOS devices, and provides the Expect
+    keyword with various match patterns for validating the returned data.
 
-    Test setup is a two-step process: 1) import the AristaExpect library, and
-    2) initialize the library (which retrieves the output of the specified
-    EOS command). Initialization may be repeated, and may specify alternate
-    commands if desired.
+    The AristaExpect library depends on the switch connection information
+    provided by the AristaLibrary module, and therefore must be imported
+    after the AristaLibrary has been imported.
 
-    After the test library has been initialized, individual test cases
-    may be run using the Expect keyword. See the documentation for the
-    Expect keyword for additional details.
+    The AristaExpect library may be initialize with a default command
+    at the time of import, but this is not required. The command to be
+    executed on devices during testing may be changed at any time, and
+    may be different for each device in the connection list. The only
+    restriction is that there may only be one command and it's output
+    per device at any one time.
+
+    The command may be updated or refreshed using the 'Get Command Output'
+    keyword or any of it's associated aliases. The aliases to 'Get
+    Command Output' are provided for convenience and clarity when
+    reading the steps within a test case. The commands contain named
+    arguments that may be specified without the argument name if the
+    arguments are given in positionally correct order. If arguments are
+    given out of order, or with some optional arguments omitted, then
+    the argument name (arg=) should be used.
+
+    Once a 'Get Command Output' keyword has been used for a given device
+    the Expect keyword may then be invoked to validate the content of
+    the returned output from the EOS command given. See the keyword
+    documentation for specific details.
 
     Examples:
 
-        Use the AristaExpect library to validate the results of 'show
-        interfaces ethernet 1':
+        Import the AristaExpect library:
 
-            # This example assigns the 'show interfaces ethernet 1' command
-            # at the time of library import.
-
+            # Import the AristaExpect library, initializing the library
+            # with the command 'show interfaces ethernet 1':
             *** Settings ***
-            # Import the prerequisite AristaLibrary first
             | Library | AristaLibrary |
-            # Import the AristaExpect library for the command
-            # show interfaces ethernet 1':
             | Library | AristaExpect | show interfaces ethernet 1 |
 
-            *** Test Cases ***
-            Initialize the testbed
-                | Initialize Tests On Switch |
-
-            Verify autoNegotiate is unknown
-                | Expect | interfaces Ethernet1 autoNegotiate | is | unknown |
-
-            Verify interfaceStatus is not disconnected
-                | Expect | interfaces Ethernet1 interfaceStatus | is not | disconnected |
-
-        Use the AristaExpect library to validate the results of 'show
-        interfaces ethernet 2':
-
-            # This example assigns the 'show interfaces ethernet 1' command
-            # when the testbed is initialized
-
+            # Import the AristaExpect library without initialization
             *** Settings ***
-            # Import the prerequisite AristaLibrary first
             | Library | AristaLibrary |
-            # Import the AristaExpect library without a command specification
             | Library | AristaExpect |
 
+        Instruct the library to execute commands on devices and store
+        the output of those commands:
+
             *** Test Cases ***
-            Initialize the testbed for the command 'show interfaces ethernet 1'
-                | Initialize Tests On Switch | cmd=show interfaces ethernet 1 |
+
+            # Get command output when a command has already been issued
+            # or was initialized in the library import statement
+
+            Get results for switch 1 only
+                | Get Command Output | switch_id=1 |
+                | Get Command Output | 1 |
+                | Get Command Output For Switch | switch_id=1 |
+                | Get Command Output For Switch | 1 |
+
+            Get results for all switches
+                | Get Command Output |
+                | Get Command Output For Switches |
+
+            # Refresh the command output for devices (perhaps after
+            # a configuration change)
+
+            Refresh results for switch 2 only
+                | Refresh Command Output | switch_id=2j |
+                | Refresh Command Output | 2 |
+                | Refresh Command Output For Switch | switch_id=2 |
+                | Refresh Command Output For Switch | 2 |
+
+            Refresh results for all switches
+                | Refresh Command Output |
+                | Refresh Command Output For Switches |
+
+            # Get command output for a different command than was previously
+            # issued to a device
+
+            Get results for new command on switch 3 only
+                | Get Command Output | switch_id=3 | cmd=show hostname |
+                | Get Command Output | 3 | cmd=show hostname |
+                | Get Command Output For Switch | switch_id=3 | cmd=show hostname |
+                | Get Command Output For Switch | 3 | cmd=show hostname |
+                | Get Command Output For Switch | 3 | show hostname |
+
+            Get results for new command on all switches
+                | Get Command Output | cmd=show hostname |
+                | Get Command Output For Switches | cmd=show hostname |
+                | Get Command Output For Switches | show hostname |
+
+        Use the Expect keyword to validate the results of commands previously
+        initialized with 'Get Command Output' or one of it's aliases.
+
+            # Verify 'show interfaces ethernet 1' results
 
             Verify autoNegotiate is unknown
                 | Expect | interfaces Ethernet1 autoNegotiate | is | unknown |
@@ -104,72 +142,45 @@ class AristaExpect(object):
             Verify interfaceStatus is not disconnected
                 | Expect | interfaces Ethernet1 interfaceStatus | is not | disconnected |
 
-        Use the AristaExpect library to validate hostnames before and
-        after changing the hostname:
+            # Validate hostnames before and after a name change
 
-            # This example combines multiple initialization calls to
-            # validate changes in the current config. The initialization
-            # calls here do not update the 'show hostname' command that
-            # is defined in the library import call.
-
-            *** Settings ***
-            # Import the prerequisite AristaLibrary first
-            | Library | AristaLibrary |
-            # Import the AristaExpect library for the command 'show hostname'
-            | Library | AristaExpect | show hostname |
-
-            *** Test Cases ***
-            Initialize the testbed for the command 'show hostname'
-                | Initialize Tests On Switches |
+            Verify hostname, change hostname, verify hostname
+                | Get Command Output | cmd=show hostname |
                 | Expect | hostname | to be | first-hostname |
                 # Send an AristaLibrary command to change the hostname
                 | Configure | hostname new-hostname |
-                | Reinitialize Tests On Switch | 2 |
+                | Refresh Command Output |
                 | Expect | hostname | to be | new-hostname |
 
-        Use the AristaExpect library to validate different command results:
+        Use the Expect keyword to validate different command results
 
-            # This example has two initialization calls that each give
-            # a different command, with the Expect keyword to validate
-            # the results of the commands.
-
-            *** Settings ***
-            # Import the prerequisite AristaLibrary first
-            | Library | AristaLibrary |
-            # Import the AristaExpect library without a command specification
-            | Library | AristaExpect |
-
-            *** Test Cases ***
             Validate the output of 'show hostname'
+                # This keyword will only run the command on switch 1
+                | Get Command Output On Switch | 1 | cmd=show hostname |
                 | Change To Switch | 1 |
-                | Initialize Tests On Switch | cmd=show hostname |
                 | Expect | hostname | to be | first-hostname |
 
             Validate the output of 'show interfaces ethernet 1'
+                # This first keyword will update all devices with the command
+                | Get Command Output | cmd=show interfaces ethernet 1 |
                 | Change To Switch | 1 |
-                | Initialize Tests On Switch | cmd=show interfaces ethernet 1 |
                 | Expect | interfaces Ethernet1 autoNegotiate | is | unknown |
                 | Expect | interfaces Ethernet1 interfaceStatus | is not | disconnected |
 
-        Use the AristaExpect library to validate lines in the running-config:
+        Use the Expect library to validate lines in the running-config:
 
-            *** Settings ***
-            # Import the prerequisite AristaLibrary first
-            | Library | AristaLibrary |
-            # Import the AristaExpect library to validate the running-config:
-            | Library | AristaExpect.AristaExpectConfig |
-
-            *** Test Cases ***
-            Initialize the testbed
-                | Initialize Tests On Switch |
-
-            # NOTE that for AristaExpectConfig test cases, the identifier
-            # key is always 'config'.
+            # NOTE that for AristaExpect test cases, when using the
+            # 'show running-config' or 'show startup-config' commands
+            # and their variants, the identifier key is always 'config'.
 
             Verify the running-config contains the line 'ip routing'
+                | Get Command Output | cmd=show running-config all |
                 | Expect | config | to contain | ip routing |
 
             Verify the running-config does not contain the line 'no ip multicast-routing'
+                # We don't need to refresh the command output here because
+                # the result from the first 'show running-config all' is
+                # still in the AristaExpect object.
                 | Expect | config | to not contain | no ip multicast-routing |
 
         NOTE: The AristaExpect library relies on the AristaLibrary for
@@ -191,19 +202,18 @@ class AristaExpect(object):
 
     # ---------------- Start Core Keywords ---------------- #
 
-    def initialize_tests_on_switch(self, switch_id=None, cmd=None):
-        """This keyword initializes the testbed by executing the desired
-        EOS command on each switch connection established in the AristaLibrary
-        instance associated with the test suite being executed. The result
-        of running the command on each switch is stored in an indexed member
-        of the AristaExpect object, where the index is the index number of
-        the connection that is established in the AristaLibrary object.
+    def get_command_output(self, switch_id=None, cmd=None):
+        """Execute the specified command on the named switch and store the
+        output from the command in the AristaExpect object. If no switch_id
+        is given, the command will be executed on all available switches.
+        If no command is given, the previous command saved for each switch
+        will be executed again.
 
         Args:
             switch_id (int, optional): The index id for a specific switch
                 connection defined in the AristaLibrary. If not specified,
-                all available switch connections will be initialized.
-            cmd (string): The command string that will be exectuted
+                all available switch connections will be used in sequence.
+            cmd (string, optional): The command string that will be exectuted
                 on the switch or switches determined by switch_id. If not
                 specified, the previous command sent to each switch will
                 be reused, or the command used in the library import if
@@ -248,41 +258,139 @@ class AristaExpect(object):
 
             self.arista_lib.change_to_switch(index)
 
-            if self.import_cmd and re.match(r'^show running-config all', self.import_cmd):
-                # If command is show running-config all, get the running
-                # config from the AristaLibrary object
+            # if self.import_cmd and re.match(r'^show running-config all', self.import_cmd):
+            if run_cmd == 'show startup-config':
+                # Command is 'show startup-config'. Get the startup config
+                # from the AristaLibrary object after refreshing the
+                # state of the configs stored in the object.
+                self.arista_lib.refresh()
+                reply = self.arista_lib.get_startup_config()
+                self.result[index] = reply.split('\n')
+            elif run_cmd == 'show running-config all':
+                # Command is 'show running-config all'. Get the running config
+                # from the AristaLibrary object after refreshing the
+                # state of the configs stored in the object.
+                self.arista_lib.refresh()
                 reply = self.arista_lib.get_running_config()
                 self.result[index] = reply.split('\n')
+            elif re.match(r'^show (startup|running)-config.*$', run_cmd):
+                # Command is a 'show *-config' that does not map directly
+                # to an AristaLibrary object attribute. Send the command
+                # to the switch and store the reply as a list.
+                reply = self.arista_lib.enable(run_cmd, encoding='text')
+                self.result[index] = reply[0]['result']['output'].split('\n')
             elif run_cmd:
-                # Command is user specified, run it on the switch
+                # Command is user specified. Send the command to the switch
+                # and store the result as a dictionary.
                 reply = self.arista_lib.enable(run_cmd)
                 self.result[index] = reply[0]['result']
 
         return self.result
 
-    def initialize_tests_on_switches(self, cmd=None):
-        """This keyword initializes the testbed on all switch connections
-        by sending the defined command to each switch. This is simply an
-        alias to initialize_tests_on_switch without the switch_id parameter.
+    def get_command_output_on_device(self, switch_id=None, cmd=None):
+        """Execute the specified command on the named switch and store the
+        output from the command in the AristaExpect object. If no switch_id
+        is given, the command will be executed on all available switches.
+        If no command is given, the previous command saved for each switch
+        will be executed again.
+
+        Get Command Output On Device is an alias for Get Command Output.
 
         Args:
-            cmd (string): The command string that will be exectuted
-                on the all the switches configured by the AristaLibrary.
-                If not specified, the previous command sent to each
-                switch will be reused, or the command used in the library
-                import if no previous command has been sent. Default is None.
+            switch_id (int, optional): The index id for a specific switch
+                connection defined in the AristaLibrary. If not specified,
+                all available switch connections will be used in sequence.
+            cmd (string, optional): The command string that will be exectuted
+                on the switch or switches determined by switch_id. If not
+                specified, the previous command sent to each switch will
+                be reused, or the command used in the library import if
+                no previous command has been sent. Default is None.
         """
-        return self.initialize_tests_on_switch(cmd=cmd)
+        return self.get_command_output(switch_id=switch_id, cmd=cmd)
 
-    def reinitialize_tests_on_switch(self, switch_id=None, cmd=None):
-        """Alias keyword for initialize_tests_on_switch
-        """
-        return self.initialize_tests_on_switch(switch_id=switch_id, cmd=cmd)
+    def get_command_output_on_devices(self, cmd=None):
+        """Execute the specified command on the named switch and store the
+        output from the command in the AristaExpect object. If no switch_id
+        is given, the command will be executed on all available switches.
+        If no command is given, the previous command saved for each switch
+        will be executed again.
 
-    def reinitialize_tests_on_switches(self, cmd=None):
-        """Alias keyword for initialize_tests_on_switches
+        Get Command Output On Devices is an alias for Get Command Output
+        without the switch_id argument, resulting in the command being
+        executed on all available switches.
+
+        Args:
+            switch_id (int, optional): The index id for a specific switch
+                connection defined in the AristaLibrary. If not specified,
+                all available switch connections will be used in sequence.
+            cmd (string, optional): The command string that will be exectuted
+                on the switch or switches determined by switch_id. If not
+                specified, the previous command sent to each switch will
+                be reused, or the command used in the library import if
+                no previous command has been sent. Default is None.
         """
-        return self.initialize_tests_on_switches(cmd=cmd)
+        return self.get_command_output(cmd=cmd)
+
+    def refresh_command_output(self, switch_id=None, cmd=None):
+        """Refresh the stored command output for the named switch by
+        executing the saved command again. If no switch_id is given, the
+        command will be executed on all available switches. The optional
+        cmd argument may be used to change the command that will be
+        executed on the named device.
+
+        Refresh Command Output is an alias for Get Command Output.
+
+        Args:
+            switch_id (int, optional): The index id for a specific switch
+                connection defined in the AristaLibrary. If not specified,
+                all available switch connections will be used in sequence.
+            cmd (string, optional): The command string that will be exectuted
+                on the switch or switches determined by switch_id. If not
+                specified, the previous command sent to each switch will
+                be reused, or the command used in the library import if
+                no previous command has been sent. Default is None.
+        """
+        return self.get_command_output(switch_id=switch_id, cmd=cmd)
+
+    def refresh_command_output_on_device(self, switch_id=None, cmd=None):
+        """Refresh the stored command output for the named switch by
+        executing the saved command again. If no switch_id is given, the
+        command will be executed on all available switches. The optional
+        cmd argument may be used to change the command that will be
+        executed on the named device.
+
+        Refresh Command Output On Device is an alias for Get Command Output.
+
+        Args:
+            switch_id (int, optional): The index id for a specific switch
+                connection defined in the AristaLibrary. If not specified,
+                all available switch connections will be used in sequence.
+            cmd (string, optional): The command string that will be exectuted
+                on the switch or switches determined by switch_id. If not
+                specified, the previous command sent to each switch will
+                be reused, or the command used in the library import if
+                no previous command has been sent. Default is None.
+        """
+        return self.get_command_output(switch_id=switch_id, cmd=cmd)
+
+    def refresh_command_output_on_devices(self, cmd=None):
+        """ Refresh the stored command output for all avaliable switches
+        by executing the saved command again on each device. The optional
+        cmd argument may be used to change the command that will be
+        executed on each device.
+
+        Refresh Command Output On Devices is an alias for Get Command Output
+        without the switch_id argument, resulting in the command being
+        executed on all available switches.
+
+        Args:
+            cmd (string, optional): The command string that will be exectuted
+                on the switch or switches determined by switch_id. If not
+                specified, the previous command sent to each switch will
+                be reused, or the command used in the library import if
+                no previous command has been sent. Default is None.
+        """
+        return self.get_command_output(cmd=cmd)
 
     def expect(self, key, match_type, match_value):
         """This keyword provides a method of testing various types of values
@@ -298,8 +406,9 @@ class AristaExpect(object):
                 with a single space. So result['key1']['sub1']['sub2'] will
                 be the string 'key1 sub1 sub2'.
 
-                When testing against the running-config, the key
-                must be 'config'.
+                When testing against the commands 'show running-config' and
+                'show startup-config' and any of their variants, the key
+                must always be 'config'.
 
             match_type (string): The match type string to be used for
                 comparison of the result value and the expected value. See
@@ -391,11 +500,18 @@ class AristaExpect(object):
                         | Expect | config | to not contain line | ip routing | => FAIL
 
         """
+        # Get the index of the currently active switch
         index = self.arista_lib.get_switch()['index']
+        # Convert the match string parameter into a python method name
+        # prefixed with an underscore and lower case
         match_string = '_{}'.format(match_type.replace(' ', '_').lower())
+        # Get the current output of the command executed on this switch
         returned = self.result[index]
+        # Convert the key into a list of nested keys, and retrieve the
+        # value of that nested key from the return data when the key is
+        # anything other than 'config' (case-insensitive)
         keylist = key.split()
-        if key != 'config':
+        if key.lower() != 'config':
             for k in keylist:
                 returned = returned[k]
 
@@ -569,14 +685,11 @@ class AristaExpect(object):
                 '{}Unable to determine type of return value'.format(AE_ERR)
             )
 
-    def _contains_line(self, key, returned, match):
-        return self._contains(key, returned, match)
-
     def _to_contain_line(self, key, returned, match):
-        return self._contains(key, returned, match)
+        return self._contains_line(key, returned, match)
 
     def _tocontainline(self, key, returned, match):
-        return self._contains(key, returned, match)
+        return self._contains_line(key, returned, match)
 
     # ---------------- Keyword 'does not contain line' and equivalents ------- #
 
@@ -609,15 +722,3 @@ class AristaExpect(object):
 
     def _tonotcontainline(self, key, returned, match):
         return self._does_not_contain_line(key, returned, match)
-
-
-class AristaExpectConfig(AristaExpect):
-    # This is a wrapper class for using the AristaExpect functionality
-    # against the runninc-config of the switch. No command is passed to
-    # the Library import in Robot Framework. The wrapper sets the command
-    # to 'show running-config all' and the key passed to the Expect function
-    # should be 'config', e.g. 'Expect  config  to contain  <config string>'.
-    ROBOT_LIBRARY_SCOPE = 'TEST_SUITE'
-
-    def __init__(self):
-        AristaExpect.__init__(self, 'show running-config all')

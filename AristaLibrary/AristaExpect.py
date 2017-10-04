@@ -534,6 +534,8 @@ class AristaExpect(object):
 
     def _is(self, key, returned, match):
         # Fail if the returned value does not equal the match value
+        if not isinstance(returned, str):
+            returned = str(returned)
         if returned != match:
             raise RuntimeError(
                 '{}Key: \'{}\', Found: \'{}\', Expected: \'{}\''
@@ -559,6 +561,8 @@ class AristaExpect(object):
 
     def _is_not(self, key, returned, match):
         # Fail if the returned value does equals the match value
+        if not isinstance(returned, str):
+            returned = str(returned)
         if returned == match:
             raise RuntimeError(
                 '{}Key: \'{}\', Found: \'{}\', Expected to not be: \'{}\''
@@ -584,6 +588,8 @@ class AristaExpect(object):
 
     def _starts_with(self, key, returned, match):
         # Fail if the returned value does not start with the match value
+        if not isinstance(returned, str):
+            returned = str(returned)
         if not returned.startswith(match):
             raise RuntimeError(
                 '{}Key: \'{}\', Found: \'{}\', Expected to start with: \'{}\''

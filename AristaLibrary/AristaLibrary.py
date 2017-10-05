@@ -75,6 +75,7 @@ class AristaLibrary(object):
 
     """
     ROBOT_LIBRARY_SCOPE = 'GLOBAL'
+    ROBOT_LIBRARY_VERSION = VERSION
 
     def __init__(self, transport="https", host='localhost',
                  username="admin", password="admin", port="443", alias=None):

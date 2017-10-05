@@ -35,6 +35,7 @@ from pyeapi.eapilib import CommandError
 from pyeapi.utils import make_iterable
 from robot.api import logger
 from robot.utils import ConnectionCache
+from version import VERSION
 import re
 
 

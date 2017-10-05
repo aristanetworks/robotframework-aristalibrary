@@ -24,4 +24,3 @@
 from version import VERSION
 __version__ = VERSION
 from AristaLibrary import *  # NOQA
-from AristaExpect import *  # NOQA

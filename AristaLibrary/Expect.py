@@ -33,11 +33,11 @@ import re
 
 from robot.libraries.BuiltIn import BuiltIn
 
-AE_ERR = 'AristaExpect: '       # AristaExpect Error prefix
+AE_ERR = 'AristaLibrary.Expect: '       # Arista Expect Error prefix
 
 
-class AristaExpect(object):
-    """AristaExpect - A Robot Framework library for testing Arista EOS
+class Expect(object):
+    """Expect - A Robot Framework library for testing Arista EOS
     devices using an Expect keyword.
 
     This library facilitates data validation of EOS command output using
@@ -45,11 +45,11 @@ class AristaExpect(object):
     command output from a set of EOS devices, and provides the Expect
     keyword with various match patterns for validating the returned data.
 
-    The AristaExpect library depends on the switch connection information
+    The Arista Expect library depends on the switch connection information
     provided by the AristaLibrary module, and therefore must be imported
     after the AristaLibrary has been imported.
 
-    The AristaExpect library may be initialize with a default command
+    The Arista Expect library may be initialize with a default command
     at the time of import, but this is not required. The command to be
     executed on devices during testing may be changed at any time, and
     may be different for each device in the connection list. The only
@@ -72,18 +72,18 @@ class AristaExpect(object):
 
     Examples:
 
-        Import the AristaExpect library:
+        Import the Arista Expect library:
 
-            # Import the AristaExpect library, initializing the library
+            # Import the Arista Expect library, initializing the library
             # with the command 'show interfaces ethernet 1':
             *** Settings ***
             | Library | AristaLibrary |
-            | Library | AristaExpect | show interfaces ethernet 1 |
+            | Library | AristaLibrary.Expect | show interfaces ethernet 1 |
 
-            # Import the AristaExpect library without initialization
+            # Import the Arista Expect library without initialization
             *** Settings ***
             | Library | AristaLibrary |
-            | Library | AristaExpect |
+            | Library | AristaLibrary.Expect |
 
         Instruct the library to execute commands on devices and store
         the output of those commands:
@@ -169,7 +169,7 @@ class AristaExpect(object):
 
         Use the Expect library to validate lines in the running-config:
 
-            # NOTE that for AristaExpect test cases, when using the
+            # NOTE that for Arista Expect test cases, when using the
             # 'show running-config' or 'show startup-config' commands
             # and their variants, the identifier key is always 'config'.
 
@@ -180,12 +180,12 @@ class AristaExpect(object):
             Verify the running-config does not contain the line 'no ip multicast-routing'
                 # We don't need to refresh the command output here because
                 # the result from the first 'show running-config all' is
-                # still in the AristaExpect object.
+                # still in the Arista Expect object.
                 | Expect | config | to not contain | no ip multicast-routing |
 
-        NOTE: The AristaExpect library relies on the AristaLibrary for
+        NOTE: The Arista Expect library relies on the AristaLibrary for
         connection management. The AristaLibrary *must* be imported before
-        the AristaExpect library to ensure proper access to the connection
+        the Arista Expect library to ensure proper access to the connection
         management routines.
     """
     ROBOT_LIBRARY_SCOPE = 'TEST_SUITE'
@@ -204,7 +204,7 @@ class AristaExpect(object):
 
     def get_command_output(self, switch_id=None, cmd=None):
         """Execute the specified command on the named switch and store the
-        output from the command in the AristaExpect object. If no switch_id
+        output from the command in the Arista Expect object. If no switch_id
         is given, the command will be executed on all available switches.
         If no command is given, the previous command saved for each switch
         will be executed again.
@@ -220,8 +220,8 @@ class AristaExpect(object):
                 no previous command has been sent. Default is None.
 
         NOTE: The result of the command is not accessible to the test cases
-        within a test suite that imports the AristaExpect library. All tests
-        must be processed using an AristaExpect-style keyword.
+        within a test suite that imports the Arista Expect library. All tests
+        must be processed using an Arista Expect-style keyword.
         """
         # Convert the passed in switch_id to the actual switch indexes
         # to be used as keys for storing the results. Use all switches
@@ -289,7 +289,7 @@ class AristaExpect(object):
 
     def get_command_output_on_device(self, switch_id=None, cmd=None):
         """Execute the specified command on the named switch and store the
-        output from the command in the AristaExpect object. If no switch_id
+        output from the command in the Arista Expect object. If no switch_id
         is given, the command will be executed on all available switches.
         If no command is given, the previous command saved for each switch
         will be executed again.
@@ -310,7 +310,7 @@ class AristaExpect(object):
 
     def get_command_output_on_devices(self, cmd=None):
         """Execute the specified command on the named switch and store the
-        output from the command in the AristaExpect object. If no switch_id
+        output from the command in the Arista Expect object. If no switch_id
         is given, the command will be executed on all available switches.
         If no command is given, the previous command saved for each switch
         will be executed again.
@@ -438,7 +438,7 @@ class AristaExpect(object):
             The match type string can be a common comparison phrase to
             indicate how the key in the command result should be compared
             against the expected value. Often there are multiple ways to
-            specify the same type of comparison. The AristaExpect library
+            specify the same type of comparison. The Arista Expect library
             is designed to recognize these variations. However, not all
             possible variations and match phrases have been implemented.
             A phrase or variation that does not match a known implementaion

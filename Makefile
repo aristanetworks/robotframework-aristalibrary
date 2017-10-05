@@ -60,4 +60,4 @@ systest: clean
 docs:
 	$(PYTHON) doc/generateHTML.py
 
-travis: clean flake8 pep8 pyflakes
+travis: clean flake8

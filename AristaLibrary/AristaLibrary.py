@@ -628,7 +628,7 @@ class AristaLibrary(object):
         This method will refresh the public running_config and startup_config
         properites of the currently active switch.  Since the properties are
         lazily loaded, this method will clear the current internal instance
-        variables.  One the next call the instance variables will be
+        variables.  On the next call the instance variables will be
         repopulated with the current config
 
         Example:
@@ -663,3 +663,67 @@ class AristaLibrary(object):
         """
 
         self._connection.current.refresh()
+
+    def ping_test(self, address, vrf='default'):
+        """
+        The Ping Test keyword pings the provided IP address from current device
+        and returns the packet loss percentage.
+
+        Arguments:
+        - `address`: A text string identifying IP address to ping from the
+        current switch.
+        - `vrf`: A text string identifying the VRF to execute the ping within.
+
+        Example:
+        | ${loss_percent}=  | Ping Test         | 10.0.0.10     |
+        | LOG               | ${loss_percent}   | level=DEBUG   |
+        | ${loss_percent}=  | Ping Test         | 1.1.1.1       | mgmt  |
+
+        This keyword parses and returns the loss percentage from the 'Ping'
+        command. Example below would return 0.
+        Example:
+        | veos-node#ping vrf default 10.0.0.10
+        | PING 10.0.0.10 (10.0.0.10) 72(100) bytes of data.
+        | 80 bytes from 10.0.0.10: icmp_seq=1 ttl=64 time=18.7 ms
+        | 80 bytes from 10.0.0.10: icmp_seq=2 ttl=64 time=21.3 ms
+        | 80 bytes from 10.0.0.10: icmp_seq=3 ttl=64 time=22.4 ms
+        | 80 bytes from 10.0.0.10: icmp_seq=4 ttl=64 time=21.5 ms
+        | 80 bytes from 10.0.0.10: icmp_seq=5 ttl=64 time=20.9 ms
+        |
+        | --- 10.0.0.10 ping statistics ---
+        | 5 packets transmitted, 5 received, 0% packet loss, time 78ms
+        | rtt min/avg/max/mdev = 18.771/20.999/22.424/1.231 ms, pipe 2, ipg/ewma 19.584/19.907 ms
+        """
+        try:
+            out = self._connection.current.enable(
+                ['ping vrf %s %s' % (vrf, address)], encoding='text')
+            out = out[0]['result']
+        except Exception as e:
+            raise e
+
+        pattern = r'(\d+)% packet loss'
+        match = re.search(pattern, out['output'])
+        if not match or not match.group(1):
+            raise AssertionError('No packet loss percentage found'
+                                 ' in output %s.' % out['output'])
+        return match.group(1)
+
+    def address_is_reachable(self, address, vrf='default'):
+        """
+        The Address Is Reachable keyword checks if the provided IP address
+        is reachable from the current device. The address is considered
+        reachable if the ping result does not have 100% packet loss.
+
+        Arguments:
+        - `address`: A text string identifying IP address to ping from the
+        current switch.
+        - `vrf`: A text string identifying the VRF to execute the ping within.
+
+        Example:
+        | ${reachable}=     | Address Is Reachable  | 1.1.1.1   |
+        | ${reachable}=     | Address Is Reachable  | 1.1.1.1   | mgmt  |
+        """
+        loss_percent = self.ping_test(address, vrf)
+        if loss_percent == '100':
+            return False
+        return True

@@ -392,6 +392,40 @@ class AristaExpect(object):
         """
         return self.get_command_output(cmd=cmd)
 
+    def get_value(self, key):
+        """ This keyword provides a method of getting a value for a key
+        from the currently stored command output.
+
+        Args:
+            key (string): The key within the result thats value will be
+                returned. This is usually a json object key string that points
+                to a specific part of the result.
+
+                To indicate depth in the result json object, separate subkeys
+                with a single space. So result['key1']['sub1']['sub2'] will
+                be the string 'key1 sub1 sub2'.
+
+        Examples:
+            # Return value for result['interfaces']['ethernet1']['description']
+            | ${result}= | Get Value | interface ethernet1 description |
+
+            # Return value for peerAddress key from 'show mlag' command.
+            | ${peer_address}= | Get Value | peerAddress |
+
+        """
+        # Get the index of the currently active switch
+        index = self.arista_lib.get_switch()['index']
+        # Get the current output of the command executed on this switch
+        returned = self.result[index]
+        # Convert the key into a list of nested keys, and retrieve the
+        # value of that nested key from the return data when the key is
+        # anything other than 'config' (case-insensitive)
+        keylist = key.split()
+        if key.lower() != 'config':
+            for k in keylist:
+                returned = returned[k]
+        return returned
+
     def expect(self, key, match_type, match_value):
         """This keyword provides a method of testing various types of values
         within the command output stored after running the 'Initialize Tests

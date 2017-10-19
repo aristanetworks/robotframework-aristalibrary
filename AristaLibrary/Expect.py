@@ -30,7 +30,7 @@
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
 import re
-
+import logging
 from robot.libraries.BuiltIn import BuiltIn
 
 AE_ERR = 'AristaLibrary.Expect: '       # Arista Expect Error prefix
@@ -392,6 +392,48 @@ class Expect(object):
         """
         return self.get_command_output(cmd=cmd)
 
+    def record_output(self, switch_id=None, cmd=None, encoding='text'):
+        """Log the provided command. If no command is provided then log the
+        contents of the currently stored command result. Default is to log
+        text format of a command output.
+
+        Args:
+            switch_id (int, optional): The index id for a specific switch
+                connection defined in the AristaLibrary. If not specified,
+                all available switch connections will be used in sequence.
+            cmd (string, optional): The command string that will be exectuted
+                on the switch or switches determined by switch_id. If not
+                specified, the previous command sent to each switch will
+                be reused, or the command used in the library import if
+                no previous command has been sent. Default is None.
+            encoding (string, default=text): The format in which the command
+                output should be logged. Options are text or json. Not all
+                commands are able to return json formatted output and in this
+                case the output will automatically be returned in text format.
+        """
+        # Convert the passed in switch_id to the actual switch info dict
+        # Use current switch if switch_id is not specified.
+        if switch_id:
+            switch = self.arista_lib.get_switch(switch_id)
+        else:
+            switch = self.arista_lib.get_switch()
+
+        result = None
+        if cmd:
+            if encoding not in ['text', 'json']:
+                encoding = 'text'
+            reply = self.arista_lib.enable(cmd, encoding=encoding)
+            result = reply[0]['result']
+        else:
+            result = self.result[switch['index']]
+        # The output key in a response indicates that the response was returned
+        # in text format and the output key stores the text string.
+        if 'output' in result:
+            result = result['output']
+
+        logging.info(result)
+        return result
+
     def get_value(self, key):
         """ This keyword provides a method of getting a value for a key
         from the currently stored command output.
@@ -426,7 +468,7 @@ class Expect(object):
                 returned = returned[k]
         return returned
 
-    def expect(self, key, match_type, match_value):
+    def expect(self, key, match_type, match_value=None):
         """This keyword provides a method of testing various types of values
         within the command output stored after running the 'Initialize Tests
         On Switch' keyword has been run.
@@ -451,7 +493,9 @@ class Expect(object):
                 result[key] against the 'value' parameter evaluates to True.
 
             match_value (string): The value against which the 'key' value
-                will be compared using the 'match_type' string.
+                will be compared using the 'match_type' string. Defaults to
+                None because a 'match_type' of empty does not require a value
+                to compare against.
 
         Examples:
             # result['interfaces']['ethernet1']['description'] should be
@@ -494,6 +538,20 @@ class Expect(object):
                     examples:
                         | Expect | name | is not | eman | => PASS
                         | Expect | name | is not equal to | name | => FAIL
+
+                empty:
+                    equivalents: is empty
+                    match description: value at key in output is empty
+                    examples:
+                        | Expect | name | empty | => PASS
+                        | Expect | name | is empty | => FAIL
+
+                not empty:
+                    equivalents: is not empty
+                    match description: value at key in output is not empty
+                    examples:
+                        | Expect | name | not empty | => PASS
+                        | Expect | name | is not empty | => FAIL
 
                 starts with:
                     equivalents: startswith, begins with, beginswith
@@ -617,6 +675,30 @@ class Expect(object):
 
     def _tonotbe(self, key, returned, match):
         return self._is_not(key, returned, match)
+
+# ---------------- Keyword 'empty' and its equivalents ---------------- #
+
+    def _empty(self, key, returned, match):
+        if returned:
+            raise RuntimeError(
+                '{}Key: \'{}\', Found: \'{}\', Expected to be empty.'
+                .format(AE_ERR, key, returned)
+            )
+
+    def _is_empty(self, key, returned, match):
+        return self._empty(key, returned, match)
+
+# ---------------- Keyword 'not empty' and its equivalents ---------------- #
+
+    def _not_empty(self, key, returned, match):
+        if not returned:
+            raise RuntimeError(
+                '{}Key: \'{}\', Found: \'{}\', Expected to not be empty.'
+                .format(AE_ERR, key, returned)
+            )
+
+    def _is_not_empty(self, key, returned, match):
+        return self._not_empty(key, returned, match)
 
     # ---------------- Keyword 'starts with' and equivalents ---------------- #
 

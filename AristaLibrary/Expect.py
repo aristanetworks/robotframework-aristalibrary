@@ -486,6 +486,9 @@ class Expect(object):
                 'show startup-config' and any of their variants, the key
                 must always be 'config'.
 
+                If you want to test for a key inside or the existence of
+                the full command output use the key 'full output'.
+
             match_type (string): The match type string to be used for
                 comparison of the result value and the expected value. See
                 the examples and documentation below for available match
@@ -601,9 +604,9 @@ class Expect(object):
         returned = self.result[index]
         # Convert the key into a list of nested keys, and retrieve the
         # value of that nested key from the return data when the key is
-        # anything other than 'config' (case-insensitive)
+        # anything except 'config' or 'full output' (case-insensitive)
         keylist = key.split()
-        if key.lower() != 'config':
+        if key.lower() not in ['config', 'full output']:
             for k in keylist:
                 returned = returned[k]
 
@@ -738,6 +741,13 @@ class Expect(object):
                 raise RuntimeError(
                     '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match, key)
                 )
+        elif isinstance(returned, dict):
+            # If we have a dict, fail if the match value is not a key in the dict
+            if match not in returned:
+                raise RuntimeError(
+                    '{}Did not find key \'{}\' in \'{}\''.format(AE_ERR, match,
+                                                                 returned.keys())
+                )
         else:
             # Not sure what type of return value we have
             raise RuntimeError(
@@ -768,6 +778,13 @@ class Expect(object):
             if match in returned:
                 raise RuntimeError(
                     '{}Found \'{}\' in \'{}\''.format(AE_ERR, match, key)
+                )
+        elif isinstance(returned, dict):
+            # If we have a dict, fail if the match value is a key in the dict
+            if match in returned:
+                raise RuntimeError(
+                    '{}Found key \'{}\' in \'{}\''.format(AE_ERR, match,
+                                                          returned.keys())
                 )
         else:
             # Not sure what type of return value we have

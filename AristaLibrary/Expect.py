@@ -691,6 +691,9 @@ class Expect(object):
     def _is_empty(self, key, returned, match):
         return self._empty(key, returned, match)
 
+    def _isempty(self, key, returned, match):
+        return self._empty(key, returned, match)
+
 # ---------------- Keyword 'not empty' and its equivalents ---------------- #
 
     def _not_empty(self, key, returned, match):
@@ -701,6 +704,9 @@ class Expect(object):
             )
 
     def _is_not_empty(self, key, returned, match):
+        return self._not_empty(key, returned, match)
+
+    def _isnotempty(self, key, returned, match):
         return self._not_empty(key, returned, match)
 
     # ---------------- Keyword 'starts with' and equivalents ---------------- #
@@ -861,3 +867,115 @@ class Expect(object):
 
     def _tonotcontainline(self, key, returned, match):
         return self._does_not_contain_line(key, returned, match)
+
+    # ---------------- Keyword 'greater' and its equivalents ---------------- #
+
+    def _greater(self, key, returned, match):
+        # Fail if the returned value is not greater than the match value.
+        # Also fail if the match value provided or the return value for
+        # the given key are not an int or float.
+        if not isinstance(returned, int) or not isinstance(returned, float):
+            try:
+                returned = int(returned)
+            except ValueError as e:
+                if 'invalid literal for int()' in e.message:
+                    try:
+                        returned = float(returned)
+                    except ValueError as e:
+                        if 'could not convert string to float' in e.message:
+                            raise RuntimeError(
+                                '{}Key: \'{}\', Returned: \'{}\', must compare to an int or float.'
+                                .format(AE_ERR, key, returned)
+                            )
+        if not isinstance(match, int) or not isinstance(match, float):
+            try:
+                match = int(match)
+            except ValueError as e:
+                if 'invalid literal for int()' in e.message:
+                    try:
+                        match = float(match)
+                    except ValueError as e:
+                        if 'could not convert string to float' in e.message:
+                            raise RuntimeError(
+                                '{}Key: \'{}\', Match: \'{}\', must provide an int or float as a match value.'
+                                .format(AE_ERR, key, match)
+                            )
+        if returned <= match:
+            raise RuntimeError(
+                '{}Key: \'{}\', Found: \'{}\', Should be greater than: \'{}\''
+                .format(AE_ERR, key, returned, match)
+            )
+
+    def _is_greater(self, key, returned, match):
+        return self._greater(key, returned, match)
+
+    def _isgreater(self, key, returned, match):
+        return self._greater(key, returned, match)
+
+    def _is_greater_than(self, key, returned, match):
+        return self._greater(key, returned, match)
+
+    def _isgreaterthan(self, key, returned, match):
+        return self._greater(key, returned, match)
+
+    def _greater_than(self, key, returned, match):
+        return self._greater(key, returned, match)
+
+    def _greaterthan(self, key, returned, match):
+        return self._greater(key, returned, match)
+
+    # ---------------- Keyword 'less' and its equivalents ---------------- #
+
+    def _less(self, key, returned, match):
+        # Fail if the returned value is not less than the match value.
+        # Also fail if the match value provided or the return value for
+        # the given key are not an int or float.
+        if not isinstance(returned, int) or not isinstance(returned, float):
+            try:
+                returned = int(returned)
+            except ValueError as e:
+                if 'invalid literal for int()' in e.message:
+                    try:
+                        returned = float(returned)
+                    except ValueError as e:
+                        if 'could not convert string to float' in e.message:
+                            raise RuntimeError(
+                                '{}Key: \'{}\', Returned: \'{}\', must compare to an int or float.'
+                                .format(AE_ERR, key, returned)
+                            )
+        if not isinstance(match, int) or not isinstance(match, float):
+            try:
+                match = int(match)
+            except ValueError as e:
+                if 'invalid literal for int()' in e.message:
+                    try:
+                        match = float(match)
+                    except ValueError as e:
+                        if 'could not convert string to float' in e.message:
+                            raise RuntimeError(
+                                '{}Key: \'{}\', Match: \'{}\', must provide an int or float as a match value.'
+                                .format(AE_ERR, key, match)
+                            )
+        if returned >= match:
+            raise RuntimeError(
+                '{}Key: \'{}\', Found: \'{}\', Should be less than: \'{}\''
+                .format(AE_ERR, key, returned, match)
+            )
+
+    def _is_less(self, key, returned, match):
+        return self._less(key, returned, match)
+
+    def _isless(self, key, returned, match):
+        return self._less(key, returned, match)
+
+    def _is_less_than(self, key, returned, match):
+        return self._less(key, returned, match)
+
+    def _islessthan(self, key, returned, match):
+        return self._less(key, returned, match)
+
+    def _less_than(self, key, returned, match):
+        return self._less(key, returned, match)
+
+    def _lessthan(self, key, returned, match):
+        return self._less(key, returned, match)

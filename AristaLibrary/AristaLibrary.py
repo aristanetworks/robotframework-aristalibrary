@@ -664,7 +664,7 @@ class AristaLibrary(object):
 
         self._connection.current.refresh()
 
-    def ping_test(self, address, vrf='default'):
+    def ping_test(self, address, vrf='default', source_int=None):
         """
         The Ping Test keyword pings the provided IP address from current device
         and returns the packet loss percentage.
@@ -694,9 +694,12 @@ class AristaLibrary(object):
         | 5 packets transmitted, 5 received, 0% packet loss, time 78ms
         | rtt min/avg/max/mdev = 18.771/20.999/22.424/1.231 ms, pipe 2, ipg/ewma 19.584/19.907 ms
         """
+        source = ''
+        if source_int:
+            source = ' source %s' % source_int
         try:
             out = self._connection.current.enable(
-                ['ping vrf %s %s' % (vrf, address)], encoding='text')
+                ['ping vrf %s %s%s' % (vrf, address, source)], encoding='text')
             out = out[0]['result']
         except Exception as e:
             raise e
@@ -708,7 +711,7 @@ class AristaLibrary(object):
                                  ' in output %s.' % out['output'])
         return match.group(1)
 
-    def address_is_reachable(self, address, vrf='default'):
+    def address_is_reachable(self, address, vrf='default', source_int=None):
         """
         The Address Is Reachable keyword checks if the provided IP address
         is reachable from the current device. The address is considered
@@ -723,7 +726,7 @@ class AristaLibrary(object):
         | ${reachable}=     | Address Is Reachable  | 1.1.1.1   |
         | ${reachable}=     | Address Is Reachable  | 1.1.1.1   | mgmt  |
         """
-        loss_percent = self.ping_test(address, vrf)
+        loss_percent = self.ping_test(address, vrf, source_int)
         if loss_percent == '100':
             return False
         return True

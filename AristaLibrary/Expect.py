@@ -30,7 +30,7 @@
 # vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
 
 import re
-
+import logging
 from robot.libraries.BuiltIn import BuiltIn
 
 AE_ERR = 'AristaLibrary.Expect: '       # Arista Expect Error prefix
@@ -392,6 +392,48 @@ class Expect(object):
         """
         return self.get_command_output(cmd=cmd)
 
+    def record_output(self, switch_id=None, cmd=None, encoding='text'):
+        """Log the provided command. If no command is provided then log the
+        contents of the currently stored command result. Default is to log
+        text format of a command output.
+
+        Args:
+            switch_id (int, optional): The index id for a specific switch
+                connection defined in the AristaLibrary. If not specified,
+                all available switch connections will be used in sequence.
+            cmd (string, optional): The command string that will be exectuted
+                on the switch or switches determined by switch_id. If not
+                specified, the previous command sent to each switch will
+                be reused, or the command used in the library import if
+                no previous command has been sent. Default is None.
+            encoding (string, default=text): The format in which the command
+                output should be logged. Options are text or json. Not all
+                commands are able to return json formatted output and in this
+                case the output will automatically be returned in text format.
+        """
+        # Convert the passed in switch_id to the actual switch info dict
+        # Use current switch if switch_id is not specified.
+        if switch_id:
+            switch = self.arista_lib.get_switch(switch_id)
+        else:
+            switch = self.arista_lib.get_switch()
+
+        result = None
+        if cmd:
+            if encoding not in ['text', 'json']:
+                encoding = 'text'
+            reply = self.arista_lib.enable(cmd, encoding=encoding)
+            result = reply[0]['result']
+        else:
+            result = self.result[switch['index']]
+        # The output key in a response indicates that the response was returned
+        # in text format and the output key stores the text string.
+        if 'output' in result:
+            result = result['output']
+
+        logging.info(result)
+        return result
+
     def get_value(self, key):
         """ This keyword provides a method of getting a value for a key
         from the currently stored command output.
@@ -426,7 +468,7 @@ class Expect(object):
                 returned = returned[k]
         return returned
 
-    def expect(self, key, match_type, match_value):
+    def expect(self, key, match_type, match_value=None):
         """This keyword provides a method of testing various types of values
         within the command output stored after running the 'Initialize Tests
         On Switch' keyword has been run.
@@ -444,6 +486,9 @@ class Expect(object):
                 'show startup-config' and any of their variants, the key
                 must always be 'config'.
 
+                If you want to test for a key inside or the existence of
+                the full command output use the key 'full output'.
+
             match_type (string): The match type string to be used for
                 comparison of the result value and the expected value. See
                 the examples and documentation below for available match
@@ -451,7 +496,9 @@ class Expect(object):
                 result[key] against the 'value' parameter evaluates to True.
 
             match_value (string): The value against which the 'key' value
-                will be compared using the 'match_type' string.
+                will be compared using the 'match_type' string. Defaults to
+                None because a 'match_type' of empty does not require a value
+                to compare against.
 
         Examples:
             # result['interfaces']['ethernet1']['description'] should be
@@ -494,6 +541,20 @@ class Expect(object):
                     examples:
                         | Expect | name | is not | eman | => PASS
                         | Expect | name | is not equal to | name | => FAIL
+
+                empty:
+                    equivalents: is empty
+                    match description: value at key in output is empty
+                    examples:
+                        | Expect | name | empty | => PASS
+                        | Expect | name | is empty | => FAIL
+
+                not empty:
+                    equivalents: is not empty
+                    match description: value at key in output is not empty
+                    examples:
+                        | Expect | name | not empty | => PASS
+                        | Expect | name | is not empty | => FAIL
 
                 starts with:
                     equivalents: startswith, begins with, beginswith
@@ -543,9 +604,9 @@ class Expect(object):
         returned = self.result[index]
         # Convert the key into a list of nested keys, and retrieve the
         # value of that nested key from the return data when the key is
-        # anything other than 'config' (case-insensitive)
+        # anything except 'config' or 'full output' (case-insensitive)
         keylist = key.split()
-        if key.lower() != 'config':
+        if key.lower() not in ['config', 'full output']:
             for k in keylist:
                 returned = returned[k]
 
@@ -618,6 +679,36 @@ class Expect(object):
     def _tonotbe(self, key, returned, match):
         return self._is_not(key, returned, match)
 
+# ---------------- Keyword 'empty' and its equivalents ---------------- #
+
+    def _empty(self, key, returned, match):
+        if returned:
+            raise RuntimeError(
+                '{}Key: \'{}\', Found: \'{}\', Expected to be empty.'
+                .format(AE_ERR, key, returned)
+            )
+
+    def _is_empty(self, key, returned, match):
+        return self._empty(key, returned, match)
+
+    def _isempty(self, key, returned, match):
+        return self._empty(key, returned, match)
+
+# ---------------- Keyword 'not empty' and its equivalents ---------------- #
+
+    def _not_empty(self, key, returned, match):
+        if not returned:
+            raise RuntimeError(
+                '{}Key: \'{}\', Found: \'{}\', Expected to not be empty.'
+                .format(AE_ERR, key, returned)
+            )
+
+    def _is_not_empty(self, key, returned, match):
+        return self._not_empty(key, returned, match)
+
+    def _isnotempty(self, key, returned, match):
+        return self._not_empty(key, returned, match)
+
     # ---------------- Keyword 'starts with' and equivalents ---------------- #
 
     def _starts_with(self, key, returned, match):
@@ -656,6 +747,13 @@ class Expect(object):
                 raise RuntimeError(
                     '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match, key)
                 )
+        elif isinstance(returned, dict):
+            # If we have a dict, fail if the match value is not a key in the dict
+            if match not in returned:
+                raise RuntimeError(
+                    '{}Did not find key \'{}\' in \'{}\''.format(AE_ERR, match,
+                                                                 returned.keys())
+                )
         else:
             # Not sure what type of return value we have
             raise RuntimeError(
@@ -686,6 +784,13 @@ class Expect(object):
             if match in returned:
                 raise RuntimeError(
                     '{}Found \'{}\' in \'{}\''.format(AE_ERR, match, key)
+                )
+        elif isinstance(returned, dict):
+            # If we have a dict, fail if the match value is a key in the dict
+            if match in returned:
+                raise RuntimeError(
+                    '{}Found key \'{}\' in \'{}\''.format(AE_ERR, match,
+                                                          returned.keys())
                 )
         else:
             # Not sure what type of return value we have
@@ -762,3 +867,115 @@ class Expect(object):
 
     def _tonotcontainline(self, key, returned, match):
         return self._does_not_contain_line(key, returned, match)
+
+    # ---------------- Keyword 'greater' and its equivalents ---------------- #
+
+    def _greater(self, key, returned, match):
+        # Fail if the returned value is not greater than the match value.
+        # Also fail if the match value provided or the return value for
+        # the given key are not an int or float.
+        if not isinstance(returned, int) or not isinstance(returned, float):
+            try:
+                returned = int(returned)
+            except ValueError as e:
+                if 'invalid literal for int()' in e.message:
+                    try:
+                        returned = float(returned)
+                    except ValueError as e:
+                        if 'could not convert string to float' in e.message:
+                            raise RuntimeError(
+                                '{}Key: \'{}\', Returned: \'{}\', must compare to an int or float.'
+                                .format(AE_ERR, key, returned)
+                            )
+        if not isinstance(match, int) or not isinstance(match, float):
+            try:
+                match = int(match)
+            except ValueError as e:
+                if 'invalid literal for int()' in e.message:
+                    try:
+                        match = float(match)
+                    except ValueError as e:
+                        if 'could not convert string to float' in e.message:
+                            raise RuntimeError(
+                                '{}Key: \'{}\', Match: \'{}\', must provide an int or float as a match value.'
+                                .format(AE_ERR, key, match)
+                            )
+        if returned <= match:
+            raise RuntimeError(
+                '{}Key: \'{}\', Found: \'{}\', Should be greater than: \'{}\''
+                .format(AE_ERR, key, returned, match)
+            )
+
+    def _is_greater(self, key, returned, match):
+        return self._greater(key, returned, match)
+
+    def _isgreater(self, key, returned, match):
+        return self._greater(key, returned, match)
+
+    def _is_greater_than(self, key, returned, match):
+        return self._greater(key, returned, match)
+
+    def _isgreaterthan(self, key, returned, match):
+        return self._greater(key, returned, match)
+
+    def _greater_than(self, key, returned, match):
+        return self._greater(key, returned, match)
+
+    def _greaterthan(self, key, returned, match):
+        return self._greater(key, returned, match)
+
+    # ---------------- Keyword 'less' and its equivalents ---------------- #
+
+    def _less(self, key, returned, match):
+        # Fail if the returned value is not less than the match value.
+        # Also fail if the match value provided or the return value for
+        # the given key are not an int or float.
+        if not isinstance(returned, int) or not isinstance(returned, float):
+            try:
+                returned = int(returned)
+            except ValueError as e:
+                if 'invalid literal for int()' in e.message:
+                    try:
+                        returned = float(returned)
+                    except ValueError as e:
+                        if 'could not convert string to float' in e.message:
+                            raise RuntimeError(
+                                '{}Key: \'{}\', Returned: \'{}\', must compare to an int or float.'
+                                .format(AE_ERR, key, returned)
+                            )
+        if not isinstance(match, int) or not isinstance(match, float):
+            try:
+                match = int(match)
+            except ValueError as e:
+                if 'invalid literal for int()' in e.message:
+                    try:
+                        match = float(match)
+                    except ValueError as e:
+                        if 'could not convert string to float' in e.message:
+                            raise RuntimeError(
+                                '{}Key: \'{}\', Match: \'{}\', must provide an int or float as a match value.'
+                                .format(AE_ERR, key, match)
+                            )
+        if returned >= match:
+            raise RuntimeError(
+                '{}Key: \'{}\', Found: \'{}\', Should be less than: \'{}\''
+                .format(AE_ERR, key, returned, match)
+            )
+
+    def _is_less(self, key, returned, match):
+        return self._less(key, returned, match)
+
+    def _isless(self, key, returned, match):
+        return self._less(key, returned, match)
+
+    def _is_less_than(self, key, returned, match):
+        return self._less(key, returned, match)
+
+    def _islessthan(self, key, returned, match):
+        return self._less(key, returned, match)
+
+    def _less_than(self, key, returned, match):
+        return self._less(key, returned, match)
+
+    def _lessthan(self, key, returned, match):
+        return self._less(key, returned, match)

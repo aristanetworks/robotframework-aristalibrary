@@ -465,7 +465,13 @@ class Expect(object):
         keylist = key.split()
         if key.lower() != 'config':
             for k in keylist:
-                returned = returned[k]
+                try:
+                    returned = returned[k]
+                except TypeError as e:
+                    if 'list indices must be integers' in e.message:
+                        returned = returned[int(k)]
+                    else:
+                        raise
         return returned
 
     def expect(self, key, match_type, match_value=None):
@@ -608,7 +614,13 @@ class Expect(object):
         keylist = key.split()
         if key.lower() not in ['config', 'full output']:
             for k in keylist:
-                returned = returned[k]
+                try:
+                    returned = returned[k]
+                except TypeError as e:
+                    if 'list indices must be integers' in e.message:
+                        returned = returned[int(k)]
+                    else:
+                        raise
 
         # Call the method referenced by the match_string, passing in
         # the values of the keylist, the returned value found by the

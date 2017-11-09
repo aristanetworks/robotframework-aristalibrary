@@ -98,7 +98,7 @@ class AristaLibrary(object):
 
     def connect_to(self, host='localhost', transport='https', port='443',
                    username='admin', password='admin', alias=None,
-                   autorefresh=True):
+                   enablepwd=None, autorefresh=True):
 
         """This is the cornerstone of all testing. The Connect To
         keyword accepts the necessary parameters to setup an API connection to
@@ -154,6 +154,7 @@ class AristaLibrary(object):
                 username=username, password=password, port=port)
             client_node = pyeapi.client.Node(client)
             client_node.autorefresh = autorefresh
+            client_node.enable_authentication(enablepwd)
             conn_indx = self._connection.register(client_node, alias)
         except Exception as e:
             raise e

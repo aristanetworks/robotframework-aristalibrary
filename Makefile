@@ -5,6 +5,7 @@
 #
 # useful targets:
 #	make sdist -- build python source distribution
+#	make flake8 -- flake8 checks
 #	make pep8 -- pep8 checks
 #	make pyflakes -- pyflakes checks
 #	make tests -- run all of the tests
@@ -25,13 +26,16 @@ VERSION := $(shell cat VERSION)
 
 ########################################################
 
-all: clean pep8 pyflakes
+all: clean flake8 pep8 pyflakes
+
+flake8:
+	flake8 --ignore=E501 AristaLibrary/
 
 pep8:
-	-pep8 -r --ignore=E501,E221,W291,W391,E302,E251,E203,W293,E231,E303,E201,E225,E261,E241 AristaLibrary/ test/
+	-pep8 -r --ignore=E501,E221,W291,W391,E302,E251,E203,W293,E231,E303,E201,E225,E261,E241 AristaLibrary/
 
 pyflakes:
-	pyflakes AristaLibrary/ test/
+	pyflakes AristaLibrary/
 
 clean:
 	@echo "Cleaning up distutils stuff"
@@ -54,4 +58,6 @@ systest: clean
 	$(PYTHON) -m unittest discover test/system -v
 
 docs:
-	$(PYTHON) doc/generateHTML.py
+	$(PYTHON) docs/generateHTML.py
+
+travis: clean flake8

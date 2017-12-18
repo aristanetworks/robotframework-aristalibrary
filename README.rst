@@ -4,23 +4,45 @@ The Arista Library for Robot Framework
 Introduction
 ------------
 
-The enclosed project aims to simplify testing when using Robot Framework by adding a number of
-EOS-centric keywords. The Library works by using the PyEAPI module to connect to and read information 
-from EOS nodes. 
+AristaLibrary aims to simplify testing projects on `Arista EOS <http://www.arista.com>`
+using `Robot Framework <http://robotframework.org/>` by adding a number of
+EOS-centric keywords. The Library works by using the PyEAPI module to
+interact with EOS nodes.
 
 Prerequisites
 -------------
 
 * `Robot Framework <http://robotframework.org/>`
-* `PyEAPI <https://github.com/arista-eosplus/pyeapi>`
+* `PyEAPI <https://pypi.python.org/pypi/pyeapi>` (`GitHub <https://github.com/arista-eosplus/pyeapi>`)
+* `Arista EOS <http://www.arista.com>` 4.12 or later
+* Python 2.7
 
-Documentation
--------------
+Installation
+------------
 
-See the `AristaLibrary <http://arista-eosplus.github.io/robotframework-aristalibrary/AristaLibrary.html>` keyword documentation.
+The easiest way to install is to use `pip <http://www.pip-installer.org/en/latest/>`::
 
-Example
--------
+    pip install robotframework-aristalibrary
+
+Upgrade using::
+
+    pip install --upgrade robotframework-aristalibrary
+
+To install from source::
+
+    git clone https://github.com/aristanetworks/robotframework-aristalibrary.git
+    cd robotframework-aristalibrary
+    # Optionally, checkout the development branch"
+    git checkout develop"
+    python setup.py install
+
+Keyword Documentation
+---------------------
+
+See the `AristaLibrary <http://aristanetworks.github.io/robotframework-aristalibrary/AristaLibrary.html>` keyword documentation.
+
+Example Robot Test
+------------------
 
 ::
 
@@ -80,3 +102,23 @@ Example
         ... ip address ${ip}
         ... no shutdown
         Configure   ${cmds}
+
+Release Notes
+-------------
+
+Release notes are available in the GitHub `releases <https://github.com/aristanetworks/robotframework-aristalibrary/releases>`.
+
+Support and Contacts
+--------------------
+
+AristaLibrary is a community-supported project, maintained by Arista EOS+.  Contact  the maintainers at `eosplus-dev@arista.com`.
+
+Contributing
+------------
+
+Contributing is encouraged via pull requests.   Please see `<CONTRIBUTING.rst>`_ for more information.
+
+License
+-------
+
+All code within this repository is made available under the BSD3 license and via the `<LICENSE>`_ file.

@@ -32,6 +32,7 @@
 import re
 import logging
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
+from version import VERSION
 
 AE_ERR = 'AristaLibrary.Expect: '       # Arista Expect Error prefix
 
@@ -189,6 +190,7 @@ class Expect(object):
         management routines.
     """
     ROBOT_LIBRARY_SCOPE = 'TEST_SUITE'
+    ROBOT_LIBRARY_VERSION = VERSION
 
     def __init__(self, cmd=None):
         # Store the command passed in when the library is imported

@@ -825,7 +825,7 @@ class Expect(object):
         if isinstance(returned, str) or isinstance(returned, unicode):
             # If we have a (unicode) string, fail if the returned value
             # does not equal the match value
-            if returned != match:
+            if returned.strip() != match:
                 raise RuntimeError(
                     '{}Key: \'{}\', Found: \'{}\', Expected to be: \'{}\''
                     .format(AE_ERR, key, returned, match)
@@ -834,7 +834,8 @@ class Expect(object):
             # If we have a list, fail if the match value is not in the list
             if match not in returned:
                 raise RuntimeError(
-                    '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match, key)
+                    '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match,
+                                                             key)
                 )
         else:
             # Not sure what type of return value we have

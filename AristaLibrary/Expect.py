@@ -31,7 +31,7 @@
 
 import re
 import logging
-from robot.libraries.BuiltIn import BuiltIn
+from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
 
 AE_ERR = 'AristaLibrary.Expect: '       # Arista Expect Error prefix
 
@@ -195,7 +195,11 @@ class Expect(object):
         self.import_cmd = cmd
         # Get the AristaLibrary instance in use so we can reference
         # the list of connections
-        self.arista_lib = BuiltIn().get_library_instance('AristaLibrary')
+        try:
+            self.arista_lib = BuiltIn().get_library_instance('AristaLibrary')
+        except RobotNotRunningError:
+            # Allow documentation builder to load this lib
+            self.arista_lib = None
         # Initialize the switch_cmd and result dictionaries as empty
         self.switch_cmd = {}
         self.result = {}

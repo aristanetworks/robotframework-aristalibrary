@@ -58,6 +58,6 @@ systest: clean
 	$(PYTHON) -m unittest discover test/system -v
 
 docs:
-	$(PYTHON) doc/generateHTML.py
+	$(PYTHON) docs/generateHTML.py
 
 travis: clean flake8

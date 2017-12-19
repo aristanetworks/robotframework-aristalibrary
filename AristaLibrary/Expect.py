@@ -752,14 +752,16 @@ class Expect(object):
         if isinstance(returned, str) or isinstance(returned, unicode):
             # If we have a (unicode) string, fail if the returned value
             # does not contain the match value
-            if match not in returned:
+            if match not in returned.strip():
                 raise RuntimeError(
                     '{}Key: \'{}\', Found: \'{}\', Expected to contain: \'{}\''
                     .format(AE_ERR, key, returned, match)
                 )
         elif isinstance(returned, list):
             # If we have a list, fail if the match value is not in the list
-            if match not in returned:
+            regex = re.compile("\s*{}".format(match))
+            matches = [m.group(0) for line in returned for m in [regex.search(line)] if m]
+            if not matches:
                 raise RuntimeError(
                     '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match, key)
                 )

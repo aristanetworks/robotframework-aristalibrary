@@ -51,7 +51,7 @@ setup(
     long_description=README,
     author='Arista EOS+ Consulting Services',
     author_email='eosplus-dev@arista.com',
-    url='https://github.com/aristanetworks/AristaLibrary',
+    url='https://aristanetworks.github.io/robotframework-aristalibrary/',
     download_url='https://github.com/aristanetworks/robotframework-aristalibrary/tarball/%s' % VERSION,
     license='BSD-3',
     platforms='any',

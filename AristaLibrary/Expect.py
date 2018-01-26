@@ -754,25 +754,24 @@ class Expect(object):
         if isinstance(returned, str) or isinstance(returned, unicode):
             # If we have a (unicode) string, fail if the returned value
             # does not contain the match value
-            if match not in returned.strip():
+            if match not in returned:
                 raise RuntimeError(
                     '{}Key: \'{}\', Found: \'{}\', Expected to contain: \'{}\''
                     .format(AE_ERR, key, returned, match)
                 )
         elif isinstance(returned, list):
             # If we have a list, fail if the match value is not in the list
-            regex = re.compile("\s*{}".format(match))
-            matches = [m.group(0) for line in returned for m in [regex.search(line)] if m]
-            if not matches:
-                raise RuntimeError(
-                    '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match, key)
-                )
-        elif isinstance(returned, dict):
-            # If we have a dict, fail if the match value is not a key in the dict
             if match not in returned:
                 raise RuntimeError(
-                    '{}Did not find key \'{}\' in \'{}\''.format(AE_ERR, match,
-                                                                 returned.keys())
+                    '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match,
+                                                             key)
+                )
+        elif isinstance(returned, dict):
+            # If we have a dict, fail if match value is not a key in the dict
+            if match not in returned:
+                raise RuntimeError(
+                    '{}Did not find key \'{}\' in \'{}\''.format(
+                        AE_ERR, match, returned.keys())
                 )
         else:
             # Not sure what type of return value we have
@@ -787,7 +786,7 @@ class Expect(object):
     def _tocontain(self, key, returned, match):
         return self._contains(key, returned, match)
 
-    # ---------------- Keyword 'does not contain' and equivalents ------------ #
+    # --------------- Keyword 'does not contain' and equivalents ------------ #
 
     def _does_not_contain(self, key, returned, match):
         if isinstance(returned, str) or isinstance(returned, unicode):
@@ -840,7 +839,10 @@ class Expect(object):
                 )
         elif isinstance(returned, list):
             # If we have a list, fail if the match value is not in the list
-            if match not in returned:
+            regex = re.compile("\s*{}".format(match))
+            matches = [m.group(0) for line in returned for m in
+                       [regex.search(line)] if m]
+            if not matches:
                 raise RuntimeError(
                     '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match,
                                                              key)
@@ -857,7 +859,7 @@ class Expect(object):
     def _tocontainline(self, key, returned, match):
         return self._contains_line(key, returned, match)
 
-    # ---------------- Keyword 'does not contain line' and equivalents ------- #
+    # --------------- Keyword 'does not contain line' and equivalents ------- #
 
     def _does_not_contain_line(self, key, returned, match):
         if isinstance(returned, str) or isinstance(returned, unicode):

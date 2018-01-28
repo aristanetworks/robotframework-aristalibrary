@@ -480,7 +480,7 @@ class Expect(object):
                         raise
         return returned
 
-    def expect(self, key, match_type, match_value=None):
+    def expect(self, key, match_type, match_value=None, msg=None):
         """This keyword provides a method of testing various types of values
         within the command output stored after running the 'Initialize Tests
         On Switch' keyword has been run.
@@ -512,6 +512,8 @@ class Expect(object):
                 None because a 'match_type' of empty does not require a value
                 to compare against.
 
+            msg (string): A string to override the default error message.
+
         Examples:
             # result['interfaces']['ethernet1']['description'] should be
             # exactly 'MyEth1'
@@ -526,6 +528,9 @@ class Expect(object):
             # meaning the running-config should not contain 'no ip routing'
             # and the following keyword example will fail
             | Expect | config | to contain line | no ip routing |
+
+            # Customize the error message
+            | Expect | config | to contain line | no ip routing | msg=Please enable routing |
 
         Match Type:
             The match type string can be a common comparison phrase to
@@ -632,7 +637,7 @@ class Expect(object):
         # the values of the keylist, the returned value found by the
         # keylist, and the expected value to be used for matching
         try:
-            getattr(self, match_string)(keylist, returned, match_value)
+            getattr(self, match_string)(keylist, returned, match_value, msg)
         except AttributeError:
             # AttributeError is misleading in this case, since the problem
             # is that the match_string has not been implemented. Instead,
@@ -645,156 +650,156 @@ class Expect(object):
 
     # ---------------- Keyword 'is' and its equivalents ---------------- #
 
-    def _is(self, key, returned, match):
+    def _is(self, key, returned, match, msg=None):
         # Fail if the returned value does not equal the match value
         if not isinstance(returned, str):
             returned = str(returned)
         if returned != match:
             raise RuntimeError(
-                '{}Key: \'{}\', Found: \'{}\', Expected: \'{}\''
+                msg or '{}Key: \'{}\', Found: \'{}\', Expected: \'{}\''
                 .format(AE_ERR, key, returned, match)
             )
 
-    def _is_equal_to(self, key, returned, match):
-        return self._is(key, returned, match)
+    def _is_equal_to(self, key, returned, match, msg=None):
+        return self._is(key, returned, match, msg)
 
-    def _isequalto(self, key, returned, match):
-        return self._is(key, returned, match)
+    def _isequalto(self, key, returned, match, msg=None):
+        return self._is(key, returned, match, msg)
 
-    def _equals(self, key, returned, match):
-        return self._is(key, returned, match)
+    def _equals(self, key, returned, match, msg=None):
+        return self._is(key, returned, match, msg)
 
-    def _to_be(self, key, returned, match):
-        return self._is(key, returned, match)
+    def _to_be(self, key, returned, match, msg=None):
+        return self._is(key, returned, match, msg)
 
-    def _tobe(self, key, returned, match):
-        return self._is(key, returned, match)
+    def _tobe(self, key, returned, match, msg=None):
+        return self._is(key, returned, match, msg)
 
     # ---------------- Keyword 'is not' and its equivalents ---------------- #
 
-    def _is_not(self, key, returned, match):
+    def _is_not(self, key, returned, match, msg=None):
         # Fail if the returned value does equals the match value
         if not isinstance(returned, str):
             returned = str(returned)
         if returned == match:
             raise RuntimeError(
-                '{}Key: \'{}\', Found: \'{}\', Expected to not be: \'{}\''
+                msg or '{}Key: \'{}\', Found: \'{}\', Expected to not be: \'{}\''
                 .format(AE_ERR, key, returned, match)
             )
 
-    def _isnot(self, key, returned, match):
-        return self._is_not(key, returned, match)
+    def _isnot(self, key, returned, match, msg=None):
+        return self._is_not(key, returned, match, msg)
 
-    def _is_not_equal_to(self, key, returned, match):
-        return self._is_not(key, returned, match)
+    def _is_not_equal_to(self, key, returned, match, msg=None):
+        return self._is_not(key, returned, match, msg)
 
-    def _isnotequalto(self, key, returned, match):
-        return self._is_not(key, returned, match)
+    def _isnotequalto(self, key, returned, match, msg=None):
+        return self._is_not(key, returned, match, msg)
 
-    def _to_not_be(self, key, returned, match):
-        return self._is_not(key, returned, match)
+    def _to_not_be(self, key, returned, match, msg=None):
+        return self._is_not(key, returned, match, msg)
 
-    def _tonotbe(self, key, returned, match):
-        return self._is_not(key, returned, match)
+    def _tonotbe(self, key, returned, match, msg=None):
+        return self._is_not(key, returned, match, msg)
 
 # ---------------- Keyword 'empty' and its equivalents ---------------- #
 
-    def _empty(self, key, returned, match):
+    def _empty(self, key, returned, match, msg=None):
         if returned:
             raise RuntimeError(
-                '{}Key: \'{}\', Found: \'{}\', Expected to be empty.'
+                msg or '{}Key: \'{}\', Found: \'{}\', Expected to be empty.'
                 .format(AE_ERR, key, returned)
             )
 
-    def _is_empty(self, key, returned, match):
-        return self._empty(key, returned, match)
+    def _is_empty(self, key, returned, match, msg=None):
+        return self._empty(key, returned, match, msg)
 
-    def _isempty(self, key, returned, match):
-        return self._empty(key, returned, match)
+    def _isempty(self, key, returned, match, msg=None):
+        return self._empty(key, returned, match, msg)
 
 # ---------------- Keyword 'not empty' and its equivalents ---------------- #
 
-    def _not_empty(self, key, returned, match):
+    def _not_empty(self, key, returned, match, msg=None):
         if not returned:
             raise RuntimeError(
-                '{}Key: \'{}\', Found: \'{}\', Expected to not be empty.'
+                msg or '{}Key: \'{}\', Found: \'{}\', Expected to not be empty.'
                 .format(AE_ERR, key, returned)
             )
 
-    def _is_not_empty(self, key, returned, match):
-        return self._not_empty(key, returned, match)
+    def _is_not_empty(self, key, returned, match, msg=None):
+        return self._not_empty(key, returned, match, msg)
 
-    def _isnotempty(self, key, returned, match):
-        return self._not_empty(key, returned, match)
+    def _isnotempty(self, key, returned, match, msg=None):
+        return self._not_empty(key, returned, match, msg)
 
     # ---------------- Keyword 'starts with' and equivalents ---------------- #
 
-    def _starts_with(self, key, returned, match):
+    def _starts_with(self, key, returned, match, msg=None):
         # Fail if the returned value does not start with the match value
         if not isinstance(returned, str):
             returned = str(returned)
         if not returned.startswith(match):
             raise RuntimeError(
-                '{}Key: \'{}\', Found: \'{}\', Expected to start with: \'{}\''
+                msg or '{}Key: \'{}\', Found: \'{}\', Expected to start with: \'{}\''
                 .format(AE_ERR, key, returned, match)
             )
 
-    def _startswith(self, key, returned, match):
-        return self._starts_with(key, returned, match)
+    def _startswith(self, key, returned, match, msg=None):
+        return self._starts_with(key, returned, match, msg)
 
-    def _begins_with(self, key, returned, match):
-        return self._starts_with(key, returned, match)
+    def _begins_with(self, key, returned, match, msg=None):
+        return self._starts_with(key, returned, match, msg)
 
-    def _beginswith(self, key, returned, match):
-        return self._starts_with(key, returned, match)
+    def _beginswith(self, key, returned, match, msg=None):
+        return self._starts_with(key, returned, match, msg)
 
     # ---------------- Keyword 'contains' and equivalents ---------------- #
 
-    def _contains(self, key, returned, match):
+    def _contains(self, key, returned, match, msg=None):
         if isinstance(returned, str) or isinstance(returned, unicode):
             # If we have a (unicode) string, fail if the returned value
             # does not contain the match value
             if match not in returned:
                 raise RuntimeError(
-                    '{}Key: \'{}\', Found: \'{}\', Expected to contain: \'{}\''
+                    msg or '{}Key: \'{}\', Found: \'{}\', Expected to contain: \'{}\''
                     .format(AE_ERR, key, returned, match)
                 )
         elif isinstance(returned, list):
             # If we have a list, fail if the match value is not in the list
             if match not in returned:
                 raise RuntimeError(
-                    '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match,
+                    msg or '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match,
                                                              key)
                 )
         elif isinstance(returned, dict):
             # If we have a dict, fail if match value is not a key in the dict
             if match not in returned:
                 raise RuntimeError(
-                    '{}Did not find key \'{}\' in \'{}\''.format(
+                    msg or '{}Did not find key \'{}\' in \'{}\''.format(
                         AE_ERR, match, returned.keys())
                 )
         else:
             # Not sure what type of return value we have
             raise RuntimeError(
-                '{}Unable to determine type of return value'
+                msg or '{}Unable to determine type of return value'
                 .format(AE_ERR)
             )
 
-    def _to_contain(self, key, returned, match):
-        return self._contains(key, returned, match)
+    def _to_contain(self, key, returned, match, msg=None):
+        return self._contains(key, returned, match, msg)
 
-    def _tocontain(self, key, returned, match):
-        return self._contains(key, returned, match)
+    def _tocontain(self, key, returned, match, msg=None):
+        return self._contains(key, returned, match, msg)
 
     # --------------- Keyword 'does not contain' and equivalents ------------ #
 
-    def _does_not_contain(self, key, returned, match):
+    def _does_not_contain(self, key, returned, match, msg=None):
         if isinstance(returned, str) or isinstance(returned, unicode):
             # If we have a (unicode) string, fail if the returned value
             # contains the match value as a substring
             if match in returned:
                 raise RuntimeError(
-                    '{}Key: \'{}\', Found: \'{}\', '
+                    msg or '{}Key: \'{}\', Found: \'{}\', '
                     'Expected to not contain: \'{}\''
                     .format(AE_ERR, key, returned, match)
                 )
@@ -802,13 +807,13 @@ class Expect(object):
             # If we have a list, fail if the match value is in the list
             if match in returned:
                 raise RuntimeError(
-                    '{}Found \'{}\' in \'{}\''.format(AE_ERR, match, key)
+                    msg or '{}Found \'{}\' in \'{}\''.format(AE_ERR, match, key)
                 )
         elif isinstance(returned, dict):
             # If we have a dict, fail if the match value is a key in the dict
             if match in returned:
                 raise RuntimeError(
-                    '{}Found key \'{}\' in \'{}\''.format(AE_ERR, match,
+                    msg or '{}Found key \'{}\' in \'{}\''.format(AE_ERR, match,
                                                           returned.keys())
                 )
         else:
@@ -817,24 +822,24 @@ class Expect(object):
                 '{}Unable to determine type of return value'.format(AE_ERR)
             )
 
-    def _doesnotcontain(self, key, returned, match):
-        return self._does_not_contain(key, returned, match)
+    def _doesnotcontain(self, key, returned, match, msg=None):
+        return self._does_not_contain(key, returned, match, msg)
 
-    def _to_not_contain(self, key, returned, match):
-        return self._does_not_contain(key, returned, match)
+    def _to_not_contain(self, key, returned, match, msg=None):
+        return self._does_not_contain(key, returned, match, msg)
 
-    def _tonotcontain(self, key, returned, match):
-        return self._does_not_contain(key, returned, match)
+    def _tonotcontain(self, key, returned, match, msg=None):
+        return self._does_not_contain(key, returned, match, msg)
 
     # ---------------- Keyword 'contains line' and equivalents ---------------- #
 
-    def _contains_line(self, key, returned, match):
+    def _contains_line(self, key, returned, match, msg=None):
         if isinstance(returned, str) or isinstance(returned, unicode):
             # If we have a (unicode) string, fail if the returned value
             # does not equal the match value
             if returned.strip() != match:
                 raise RuntimeError(
-                    '{}Key: \'{}\', Found: \'{}\', Expected to be: \'{}\''
+                    msg or '{}Key: \'{}\', Found: \'{}\', Expected to be: \'{}\''
                     .format(AE_ERR, key, returned, match)
                 )
         elif isinstance(returned, list):
@@ -844,7 +849,7 @@ class Expect(object):
                        [regex.search(line)] if m]
             if not matches:
                 raise RuntimeError(
-                    '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match,
+                    msg = '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match,
                                                              key)
                 )
         else:
@@ -853,28 +858,28 @@ class Expect(object):
                 '{}Unable to determine type of return value'.format(AE_ERR)
             )
 
-    def _to_contain_line(self, key, returned, match):
-        return self._contains_line(key, returned, match)
+    def _to_contain_line(self, key, returned, match, msg=None):
+        return self._contains_line(key, returned, match, msg)
 
-    def _tocontainline(self, key, returned, match):
-        return self._contains_line(key, returned, match)
+    def _tocontainline(self, key, returned, match, msg=None):
+        return self._contains_line(key, returned, match, msg)
 
     # --------------- Keyword 'does not contain line' and equivalents ------- #
 
-    def _does_not_contain_line(self, key, returned, match):
+    def _does_not_contain_line(self, key, returned, match, msg=None):
         if isinstance(returned, str) or isinstance(returned, unicode):
             # If we have a (unicode) string, fail if the returned value
             # equals the match value
             if returned == match:
                 raise RuntimeError(
-                    '{}Found \'{}\' in key \'{}\', Expected to not be found'
+                    msg or '{}Found \'{}\' in key \'{}\', Expected to not be found'
                     .format(AE_ERR, match, key)
                 )
         elif isinstance(returned, list):
             # If we have a list, fail if the list contains the match value
             if match in returned:
                 raise RuntimeError(
-                    '{}Found \'{}\' in \'{}\''.format(AE_ERR, match, key)
+                    msg or '{}Found \'{}\' in \'{}\''.format(AE_ERR, match, key)
                 )
         else:
             # Not sure what type of return value we have
@@ -882,18 +887,18 @@ class Expect(object):
                 '{}Unable to determine type of return value'.format(AE_ERR)
             )
 
-    def _doesnotcontainline(self, key, returned, match):
-        return self._does_not_contain_line(key, returned, match)
+    def _doesnotcontainline(self, key, returned, match, msg=None):
+        return self._does_not_contain_line(key, returned, match, msg)
 
-    def _to_not_contain_line(self, key, returned, match):
-        return self._does_not_contain_line(key, returned, match)
+    def _to_not_contain_line(self, key, returned, match, msg=None):
+        return self._does_not_contain_line(key, returned, match, msg)
 
-    def _tonotcontainline(self, key, returned, match):
-        return self._does_not_contain_line(key, returned, match)
+    def _tonotcontainline(self, key, returned, match, msg=None):
+        return self._does_not_contain_line(key, returned, match, msg)
 
     # ---------------- Keyword 'greater' and its equivalents ---------------- #
 
-    def _greater(self, key, returned, match):
+    def _greater(self, key, returned, match, msg=None):
         # Fail if the returned value is not greater than the match value.
         # Also fail if the match value provided or the return value for
         # the given key are not an int or float.
@@ -925,31 +930,31 @@ class Expect(object):
                             )
         if returned <= match:
             raise RuntimeError(
-                '{}Key: \'{}\', Found: \'{}\', Should be greater than: \'{}\''
+                msg or '{}Key: \'{}\', Found: \'{}\', Should be greater than: \'{}\''
                 .format(AE_ERR, key, returned, match)
             )
 
-    def _is_greater(self, key, returned, match):
-        return self._greater(key, returned, match)
+    def _is_greater(self, key, returned, match, msg=None):
+        return self._greater(key, returned, match, msg)
 
-    def _isgreater(self, key, returned, match):
-        return self._greater(key, returned, match)
+    def _isgreater(self, key, returned, match, msg=None):
+        return self._greater(key, returned, match, msg)
 
-    def _is_greater_than(self, key, returned, match):
-        return self._greater(key, returned, match)
+    def _is_greater_than(self, key, returned, match, msg=None):
+        return self._greater(key, returned, match, msg)
 
-    def _isgreaterthan(self, key, returned, match):
-        return self._greater(key, returned, match)
+    def _isgreaterthan(self, key, returned, match, msg=None):
+        return self._greater(key, returned, match, msg)
 
-    def _greater_than(self, key, returned, match):
-        return self._greater(key, returned, match)
+    def _greater_than(self, key, returned, match, msg=None):
+        return self._greater(key, returned, match, msg)
 
-    def _greaterthan(self, key, returned, match):
-        return self._greater(key, returned, match)
+    def _greaterthan(self, key, returned, match, msg=None):
+        return self._greater(key, returned, match, msg)
 
     # ---------------- Keyword 'less' and its equivalents ---------------- #
 
-    def _less(self, key, returned, match):
+    def _less(self, key, returned, match, msg=None):
         # Fail if the returned value is not less than the match value.
         # Also fail if the match value provided or the return value for
         # the given key are not an int or float.
@@ -981,24 +986,24 @@ class Expect(object):
                             )
         if returned >= match:
             raise RuntimeError(
-                '{}Key: \'{}\', Found: \'{}\', Should be less than: \'{}\''
+                msg = '{}Key: \'{}\', Found: \'{}\', Should be less than: \'{}\''
                 .format(AE_ERR, key, returned, match)
             )
 
-    def _is_less(self, key, returned, match):
-        return self._less(key, returned, match)
+    def _is_less(self, key, returned, match, msg=None):
+        return self._less(key, returned, match, msg)
 
-    def _isless(self, key, returned, match):
-        return self._less(key, returned, match)
+    def _isless(self, key, returned, match, msg=None):
+        return self._less(key, returned, match, msg)
 
-    def _is_less_than(self, key, returned, match):
-        return self._less(key, returned, match)
+    def _is_less_than(self, key, returned, match, msg=None):
+        return self._less(key, returned, match, msg)
 
-    def _islessthan(self, key, returned, match):
-        return self._less(key, returned, match)
+    def _islessthan(self, key, returned, match, msg=None):
+        return self._less(key, returned, match, msg)
 
-    def _less_than(self, key, returned, match):
-        return self._less(key, returned, match)
+    def _less_than(self, key, returned, match, msg=None):
+        return self._less(key, returned, match, msg)
 
-    def _lessthan(self, key, returned, match):
-        return self._less(key, returned, match)
+    def _lessthan(self, key, returned, match, msg=None):
+        return self._less(key, returned, match, msg)

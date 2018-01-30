@@ -208,7 +208,7 @@ class Expect(object):
 
     # ---------------- Start Core Keywords ---------------- #
 
-    def get_command_output(self, switch_id=None, cmd=None):
+    def get_command_output(self, switch_id=None, cmd=None, version=1):
         """Execute the specified command on the named switch and store the
         output from the command in the Arista Expect object. If no switch_id
         is given, the command will be executed on all available switches.
@@ -288,12 +288,12 @@ class Expect(object):
             elif run_cmd:
                 # Command is user specified. Send the command to the switch
                 # and store the result as a dictionary.
-                reply = self.arista_lib.enable(run_cmd)
+                reply = self.arista_lib.enable(run_cmd, version=version)
                 self.result[index] = reply[0]['result']
 
         return self.result
 
-    def get_command_output_on_device(self, switch_id=None, cmd=None):
+    def get_command_output_on_device(self, switch_id=None, cmd=None, version=1):
         """Execute the specified command on the named switch and store the
         output from the command in the Arista Expect object. If no switch_id
         is given, the command will be executed on all available switches.
@@ -312,9 +312,9 @@ class Expect(object):
                 be reused, or the command used in the library import if
                 no previous command has been sent. Default is None.
         """
-        return self.get_command_output(switch_id=switch_id, cmd=cmd)
+        return self.get_command_output(switch_id=switch_id, cmd=cmd, version=version)
 
-    def get_command_output_on_devices(self, cmd=None):
+    def get_command_output_on_devices(self, cmd=None, version=1):
         """Execute the specified command on the named switch and store the
         output from the command in the Arista Expect object. If no switch_id
         is given, the command will be executed on all available switches.
@@ -335,9 +335,9 @@ class Expect(object):
                 be reused, or the command used in the library import if
                 no previous command has been sent. Default is None.
         """
-        return self.get_command_output(cmd=cmd)
+        return self.get_command_output(cmd=cmd, version=version)
 
-    def refresh_command_output(self, switch_id=None, cmd=None):
+    def refresh_command_output(self, switch_id=None, cmd=None, version=1):
         """Refresh the stored command output for the named switch by
         executing the saved command again. If no switch_id is given, the
         command will be executed on all available switches. The optional
@@ -356,9 +356,9 @@ class Expect(object):
                 be reused, or the command used in the library import if
                 no previous command has been sent. Default is None.
         """
-        return self.get_command_output(switch_id=switch_id, cmd=cmd)
+        return self.get_command_output(switch_id=switch_id, cmd=cmd, version=version)
 
-    def refresh_command_output_on_device(self, switch_id=None, cmd=None):
+    def refresh_command_output_on_device(self, switch_id=None, cmd=None, version=1):
         """Refresh the stored command output for the named switch by
         executing the saved command again. If no switch_id is given, the
         command will be executed on all available switches. The optional
@@ -377,9 +377,9 @@ class Expect(object):
                 be reused, or the command used in the library import if
                 no previous command has been sent. Default is None.
         """
-        return self.get_command_output(switch_id=switch_id, cmd=cmd)
+        return self.get_command_output(switch_id=switch_id, cmd=cmd, version=version)
 
-    def refresh_command_output_on_devices(self, cmd=None):
+    def refresh_command_output_on_devices(self, cmd=None, version=1):
         """ Refresh the stored command output for all avaliable switches
         by executing the saved command again on each device. The optional
         cmd argument may be used to change the command that will be
@@ -396,7 +396,7 @@ class Expect(object):
                 be reused, or the command used in the library import if
                 no previous command has been sent. Default is None.
         """
-        return self.get_command_output(cmd=cmd)
+        return self.get_command_output(cmd=cmd, version=version)
 
     def record_output(self, switch_id=None, cmd=None, encoding='text'):
         """Log the provided command. If no command is provided then log the
@@ -768,8 +768,8 @@ class Expect(object):
             # If we have a list, fail if the match value is not in the list
             if match not in returned:
                 raise RuntimeError(
-                    msg or '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match,
-                                                             key)
+                    msg or '{}Did not find \'{}\' in \'{}\''.format(
+                        AE_ERR, match, key)
                 )
         elif isinstance(returned, dict):
             # If we have a dict, fail if match value is not a key in the dict
@@ -807,14 +807,15 @@ class Expect(object):
             # If we have a list, fail if the match value is in the list
             if match in returned:
                 raise RuntimeError(
-                    msg or '{}Found \'{}\' in \'{}\''.format(AE_ERR, match, key)
+                    msg or '{}Found \'{}\' in \'{}\''.format(
+                        AE_ERR, match, key)
                 )
         elif isinstance(returned, dict):
             # If we have a dict, fail if the match value is a key in the dict
             if match in returned:
                 raise RuntimeError(
-                    msg or '{}Found key \'{}\' in \'{}\''.format(AE_ERR, match,
-                                                          returned.keys())
+                    msg or '{}Found key \'{}\' in \'{}\''.format(
+                        AE_ERR, match, returned.keys())
                 )
         else:
             # Not sure what type of return value we have
@@ -831,7 +832,7 @@ class Expect(object):
     def _tonotcontain(self, key, returned, match, msg=None):
         return self._does_not_contain(key, returned, match, msg)
 
-    # ---------------- Keyword 'contains line' and equivalents ---------------- #
+    # -------------- Keyword 'contains line' and equivalents --------------- #
 
     def _contains_line(self, key, returned, match, msg=None):
         if isinstance(returned, str) or isinstance(returned, unicode):
@@ -849,8 +850,8 @@ class Expect(object):
                        [regex.search(line)] if m]
             if not matches:
                 raise RuntimeError(
-                    msg = '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match,
-                                                             key)
+                    msg='{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match,
+                                                                 key)
                 )
         else:
             # Not sure what type of return value we have
@@ -986,7 +987,7 @@ class Expect(object):
                             )
         if returned >= match:
             raise RuntimeError(
-                msg = '{}Key: \'{}\', Found: \'{}\', Should be less than: \'{}\''
+                msg='{}Key: \'{}\', Found: \'{}\', Should be less than: \'{}\''
                 .format(AE_ERR, key, returned, match)
             )
 

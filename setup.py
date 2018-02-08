@@ -41,8 +41,6 @@ CURDIR = dirname(abspath(__file__))
 execfile(join(CURDIR, 'AristaLibrary', 'version.py'))
 with open(join(CURDIR, 'README.rst')) as readme:
     README = readme.read()
-with open(join(CURDIR, 'requirements.txt')) as requirements:
-    INSTALL_REQUIREMENTS = requirements.read()
 
 setup(
     name='robotframework-aristalibrary',
@@ -57,6 +55,10 @@ setup(
     platforms='any',
     keywords='robotframework testing testautomation arista eos eapi pyeapi',
     packages=['AristaLibrary'],
-    install_requires=INSTALL_REQUIREMENTS
+    install_requires=[
+        'docutils>=0.9',
+        'pyeapi>=0.8.1,<2',
+        'robotframework>=3.0'
+    ]
 )
 

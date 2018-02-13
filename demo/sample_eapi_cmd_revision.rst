@@ -69,6 +69,7 @@ Suite Setup
     ...    pybot --pythonpath=AristaLibrary --noncritical new demo/sample-test-refactored.txt
 
     Library    AristaLibrary
+    Library    AristaLibrary.Expect
     Library    Collections
     Suite Setup    Connect To Switches
     Suite Teardown    Clear All Connections
@@ -90,29 +91,38 @@ Suite Setup
         #Connect To    host=${SW2_HOST}    transport=${TRANSPORT}    username=${USERNAME}    password=${PASSWORD}    port=${SW2_PORT}
         #Configure    hostname veos1
 
-    Configure IP Int
-        [Arguments]    ${switch}    ${interface}    ${ip}
-        Change To Switch    ${switch}
-        Configure    default interface ${interface}
-        @{cmds}=    Create List    default interface ${interface}    interface ${interface}    no switchport    ip address ${ip}    no shutdown
-        Configure    ${cmds}
-
 Test Cases
 ===============
 
 .. code:: robotframework
 
     *** Test Cases ***
-    Ping Test
-        [Documentation]    Configure Et1 on both nodes and ping between them
-        [tags]    Configure
-        Configure IP Int    1    ethernet1    10.1.1.0/31
-        #Configure IP Int    2    ethernet1    10.1.1.1/31
+    eAPI Command Revision
+        [tags]    Production
 
-        ${output}=    Enable    ping 10.1.1.0    text
+        # Default revision
+        ${output}=    Enable    show cvx
         ${result}=    Get From Dictionary    ${output[0]}    result
         Log    ${result}
-        ${match}    ${group1}=    Should Match Regexp    ${result['output']}    (\\d+)% packet loss
-        Should Be Equal As Integers    ${group1}    0    msg="Packets lost percent not zero!!!"
+        Dictionary Should Not Contain Key  ${result}  clusterMode
+
+        # Specify revision 2 for this command
+        ${show_cvx}=  Create Dictionary  cmd=show cvx  revision=${2}
+        ${cmds}=  Create List  ${show_cvx}
+        Log List  ${cmds}
+        ${output}=    Enable    ${cmds}
+        ${result}=    Get From Dictionary    ${output[0]}    result
+        Log    ${result}
+        Dictionary Should Contain Key  ${result}  clusterMode
+
+    eAPI Command Revision with Expect
+        [tags]    Production
+
+        # Specify revision 2 for this command
+        ${show_cvx}=  Create Dictionary  cmd=show cvx  revision=${2}
+        ${cmds}=  Create List  ${show_cvx}
+        Log List  ${cmds}
+        Get Command Output  cmd=${cmds}
+        Expect  clusterMode  is  False
 
 There you go...  Tests, embedded within documentation!

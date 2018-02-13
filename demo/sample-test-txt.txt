@@ -1,0 +1,44 @@
+*** Settings ***
+Documentation     This is a sample Robot Framework suite which takes advantage of
+...               the AristaLibrary for communicating with and controlling Arista switches.
+...               Run with:
+...               pybot --pythonpath=AristaLibrary --noncritical new demo/sample-test.txt
+Suite Setup       Connect To Switches
+Suite Teardown    Clear All Connections
+Library           AristaLibrary
+Library           Collections
+
+*** Variables ***
+${TRANSPORT}      http
+${SW1_HOST}       localhost
+${SW1_PORT}       2080
+${SW2_HOST}       localhost
+${SW2_PORT}       2081
+${USERNAME}       vagrant
+${PASSWORD}       vagrant
+
+*** Test Cases ***
+Ping Test
+    [Documentation]    Configure Et1 on both nodes and ping between them
+    [Tags]    Configure
+    Change To Switch    1
+    Configure    default interface ethernet1
+    @{cmds}=    Create List    interface ethernet1    no switchport    ip address 10.1.1.0/31    no shutdown
+    Configure    ${cmds}
+    Change To Switch    2
+    Configure    default interface ethernet1
+    @{cmds}=    Create List    interface ethernet1    no switchport    ip address 10.1.1.1/31    no shutdown
+    Configure    ${cmds}
+    ${output}=    Enable    ping 10.1.1.0
+    ${result}=    Get From Dictionary    ${output[0]}    result
+    Log    ${result}
+    ${match}    ${group1}=    Should Match Regexp    ${result['messages'][0]}    (\\d+)% packet loss
+    Should Be Equal As Integers    ${group1}    0    msg="Packets lost!!!"
+
+*** Keywords ***
+Connect To Switches
+    [Documentation]    Establish connection to a switch which gets used by test cases.
+    Connect To    host=${SW1_HOST}    transport=${TRANSPORT}    username=${USERNAME}    password=${PASSWORD}    port=${SW1_PORT}
+    Configure    hostname veos0
+    Connect To    host=${SW2_HOST}    transport=${TRANSPORT}    username=${USERNAME}    password=${PASSWORD}    port=${SW2_PORT}
+    Configure    hostname veos1

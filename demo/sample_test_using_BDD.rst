@@ -73,7 +73,7 @@ Suite Setup
     ...    Run with:
     ...    pybot --pythonpath=AristaLibrary --noncritical new demo/sample-test-refactored.txt
 
-    Library    AristaLibrary.py
+    Library    AristaLibrary
     Library    Collections
     Suite Setup    Connect To Switches
     Suite Teardown    Clear All Connections

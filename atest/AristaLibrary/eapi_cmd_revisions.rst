@@ -125,4 +125,24 @@ Test Cases
         Get Command Output  cmd=${cmds}
         Expect  clusterMode  is  False
 
+    eAPI Command Revision with Eapi Command
+        [tags]    Production
+
+        ${show_cvx2}=  Create Dictionary  cmd=show cvx  revision=${2}
+        ${cmds2}=  Create List  ${show_cvx2}
+
+        # Specify revision 2 for this command
+        ${show_cvx}=  Eapi Command  cmd=show cvx  revision=2
+        ${show_ver}=  Eapi Command  cmd=show version
+        ${cmds}=  Combine Lists  ${show_cvx}  ${show_ver}
+        Log List  ${cmds}
+        Log List  ${show_cvx}
+        Log List  ${cmds2}
+
+        #Dictionaries Should Be Equal  ${show_cvx}[0]  ${show_cvx2}[0]
+        Lists Should Be Equal  ${show_cvx}  ${cmds2}
+        ${output}=    Enable    ${cmds}
+        Log List    ${output}
+        Log Dictionary    ${output[0]['result']}
+
 There you go...  Tests, embedded within documentation!

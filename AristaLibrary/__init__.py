@@ -21,6 +21,8 @@
 # "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 # LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
 # A PARTICULAR PURPOSE ARE DISCLAIMED. IN
-from version import VERSION
+""" Top-level imports for AristLibrary
+"""
+from .version import VERSION
 __version__ = VERSION
-from AristaLibrary import *  # NOQA
+from .AristaLibrary import *  # NOQA

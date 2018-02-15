@@ -731,3 +731,31 @@ class AristaLibrary(object):
         if loss_percent == '100':
             return False
         return True
+
+    def eapi_command(self, cmd, revision=None):
+        """
+        Returns a properly formatted JSON object for an eAPI command with an
+        optionally-specified output revision.
+
+        Arguments:
+        - `cmd`: A text string containing the EOS command to execute
+        - `revision`: (Optional) The desired output revision
+
+        Example:
+        | ${commands}=       | eapi Command    | show cvx    | revision=2 |
+        | Log List           | ${commands}     | level=DEBUG |            |
+        | Get Command Output | cmd=${commands} |             |            |
+        | Expect             | clusterMode     | is          | False      |
+
+        | ${command1}= | eapi Command | show cvx    | revision=2  |
+        | ${command2}= | show version |             |             |
+        | ${commands}= | Create List  | ${command1} | ${command2} |
+        | Log List     | ${commands}  | level=DEBUG |             |
+        | ${output}=   | Enable       | ${commands} |             |
+        """
+        command = {}
+        command['cmd'] = str(cmd)
+        if revision is not None:
+            command['revision'] = int(revision)
+
+        return [command]

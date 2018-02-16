@@ -1,11 +1,11 @@
 #!/bin/sh
 
 # Where to find AristaLibrary and pyeapi
-p1=${PYTHONPATH:=../AristaLibrary}
+p1=${PYTHONPATH:=..}
 export PYTHONPATH
 
 # Default vagrant box to use for tests
-v1=${VM_BOX:=vEOS_4.14.6M}  # see `vagrant box list`
+v1=${VM_BOX:=vEOS-lab-4.20.0-EFT2}  # see `vagrant box list`
 
 # These can be overriden so multiple tests do not stomp on each other.
 #   Range: 103 - 6553   (gives actual starting ports of 1030-65530)
@@ -38,6 +38,24 @@ start_vagrant () {
     echo "vEOS VMs are up."
 }
 
+vagrant_cmd () {
+    sed -i '' \
+        -e "s/guest: 80.*\$/guest: 80, host: \"${HTTP_PORT_PREFIX}#{i}\"/" \
+        -e "s/guest: 443.*\$/guest: 443, host: \"${HTTPS_PORT_PREFIX}#{i}\"/" \
+        Vagrantfile
+
+    # Start vagrant boxes
+    export VM_BOX
+    export VM_BOX_URL
+    echo "Running: time vagrant ${VAGRANT_CMD} $@"
+    time vagrant "${VAGRANT_CMD}" "$@"
+
+    if [ $? -ne 0 ]; then
+        echo "Failed to run 'vagrant ${VAGRANT_CMD}'"
+        exit 1
+    fi
+}
+
 start_pybot () {
     echo "Starting Robot Framework tests..."
 
@@ -52,7 +70,6 @@ start_pybot () {
         --variable SW2_PORT:${HTTP_PORT_PREFIX}1 \
         --noncritical new \
         AristaLibrary/
-    #    --pythonpath=../AristaLibrary
 }
 
 stop_vagrant () {
@@ -98,7 +115,7 @@ START_VAGRANT=1
 START_PYBOT=1
 STOP_VAGRANT=1
 
-while getopts ":hb:urd" opt; do
+while getopts ":hb:c:urd" opt; do
     case $opt in
         h)
             usage
@@ -107,6 +124,12 @@ while getopts ":hb:urd" opt; do
         b)
             echo "Running tests with box image: ${OPTARG}"
             export VM_BOX=${OPTARG}
+            ;;
+        c)
+            export VAGRANT_CMD=${OPTARG}
+            START_VAGRANT=0
+            START_PYBOT=0
+            STOP_VAGRANT=0
             ;;
         u)
             echo "Starting vagrant boxes only."
@@ -133,6 +156,7 @@ while getopts ":hb:urd" opt; do
             ;;
     esac
 done
+shift $((OPTIND -1))
 
 check_prereqs ${REQS}
 
@@ -152,4 +176,6 @@ fi
 if [ ${STOP_VAGRANT} -gt 0 ]; then
     stop_vagrant
 fi
-
+if [ "X${VAGRANT_CMD}" != "X" ]; then
+    vagrant_cmd
+fi

@@ -264,32 +264,38 @@ class Expect(object):
 
             self.arista_lib.change_to_switch(index)
 
-            # if self.import_cmd and re.match(r'^show running-config all', self.import_cmd):
-            if run_cmd == 'show startup-config':
-                # Command is 'show startup-config'. Get the startup config
-                # from the AristaLibrary object after refreshing the
-                # state of the configs stored in the object.
-                self.arista_lib.refresh()
-                reply = self.arista_lib.get_startup_config()
-                self.result[index] = reply.split('\n')
-            elif run_cmd == 'show running-config all':
-                # Command is 'show running-config all'. Get the running config
-                # from the AristaLibrary object after refreshing the
-                # state of the configs stored in the object.
-                self.arista_lib.refresh()
-                reply = self.arista_lib.get_running_config()
-                self.result[index] = reply.split('\n')
-            elif re.match(r'^show (startup|running)-config.*$', run_cmd):
-                # Command is a 'show *-config' that does not map directly
-                # to an AristaLibrary object attribute. Send the command
-                # to the switch and store the reply as a list.
-                reply = self.arista_lib.enable(run_cmd, encoding='text')
-                self.result[index] = reply[0]['result']['output'].split('\n')
-            elif run_cmd:
+            if isinstance(run_cmd, dict) or isinstance(run_cmd, list):
                 # Command is user specified. Send the command to the switch
                 # and store the result as a dictionary.
                 reply = self.arista_lib.enable(run_cmd, version=version)
                 self.result[index] = reply[0]['result']
+            else:
+                # Command is a string. See if it matches a special case
+                if run_cmd == 'show startup-config':
+                    # Command is 'show startup-config'. Get the startup config
+                    # from the AristaLibrary object after refreshing the
+                    # state of the configs stored in the object.
+                    self.arista_lib.refresh()
+                    reply = self.arista_lib.get_startup_config()
+                    self.result[index] = reply.split('\n')
+                elif run_cmd == 'show running-config all':
+                    # Command is 'show running-config all'. Get the running config
+                    # from the AristaLibrary object after refreshing the
+                    # state of the configs stored in the object.
+                    self.arista_lib.refresh()
+                    reply = self.arista_lib.get_running_config()
+                    self.result[index] = reply.split('\n')
+                elif re.match(r'^show (startup|running)-config.*$', run_cmd):
+                    # Command is a 'show *-config' that does not map directly
+                    # to an AristaLibrary object attribute. Send the command
+                    # to the switch and store the reply as a list.
+                    reply = self.arista_lib.enable(run_cmd, encoding='text')
+                    self.result[index] = reply[0]['result']['output'].split('\n')
+                elif run_cmd:
+                    # Command is user specified. Send the command to the switch
+                    # and store the result as a dictionary.
+                    reply = self.arista_lib.enable(run_cmd)
+                    self.result[index] = reply[0]['result']
 
         return self.result
 

@@ -57,7 +57,7 @@ setup(
     packages=['AristaLibrary'],
     install_requires=[
         'docutils>=0.9',
-        'pyeapi>=0.8.1,<2',
+        'pyeapi>=0.8.2,<2',
         'robotframework>=3.0'
     ]
 )

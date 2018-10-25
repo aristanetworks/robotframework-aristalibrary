@@ -267,7 +267,7 @@ class Expect(object):
             if isinstance(run_cmd, dict) or isinstance(run_cmd, list):
                 # Command is user specified. Send the command to the switch
                 # and store the result as a dictionary.
-                reply = self.arista_lib.enable(run_cmd, version=version)
+                reply = self.arista_lib.enable(run_cmd)
                 self.result[index] = reply[0]['result']
             else:
                 # Command is a string. See if it matches a special case
@@ -856,13 +856,13 @@ class Expect(object):
                        [regex.search(line)] if m]
             if not matches:
                 raise RuntimeError(
-                    msg='{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match,
+                    msg or '{}Did not find \'{}\' in \'{}\''.format(AE_ERR, match,
                                                                  key)
                 )
         else:
             # Not sure what type of return value we have
             raise RuntimeError(
-                '{}Unable to determine type of return value'.format(AE_ERR)
+                msg or '{}Unable to determine type of return value'.format(AE_ERR)
             )
 
     def _to_contain_line(self, key, returned, match, msg=None):

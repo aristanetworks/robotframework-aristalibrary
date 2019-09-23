@@ -32,7 +32,13 @@
 import re
 import logging
 from robot.libraries.BuiltIn import BuiltIn, RobotNotRunningError
-from version import VERSION
+from .version import VERSION
+import sys
+
+# Python3 compatible magic
+if sys.version_info[0] == 3:
+    unicode = str
+    basestring = (str, bytes)
 
 AE_ERR = 'AristaLibrary.Expect: '       # Arista Expect Error prefix
 
@@ -782,7 +788,7 @@ class Expect(object):
             if match not in returned:
                 raise RuntimeError(
                     msg or '{}Did not find key \'{}\' in \'{}\''.format(
-                        AE_ERR, match, returned.keys())
+                        AE_ERR, match, list(returned.keys()))
                 )
         else:
             # Not sure what type of return value we have
@@ -821,7 +827,7 @@ class Expect(object):
             if match in returned:
                 raise RuntimeError(
                     msg or '{}Found key \'{}\' in \'{}\''.format(
-                        AE_ERR, match, returned.keys())
+                        AE_ERR, match, list(returned.keys()))
                 )
         else:
             # Not sure what type of return value we have
@@ -851,7 +857,7 @@ class Expect(object):
                 )
         elif isinstance(returned, list):
             # If we have a list, fail if the match value is not in the list
-            regex = re.compile("\s*{}".format(match))
+            regex = re.compile(r"\s*{}".format(match))
             matches = [m.group(0) for line in returned for m in
                        [regex.search(line)] if m]
             if not matches:

@@ -35,8 +35,14 @@ from pyeapi.eapilib import CommandError
 from pyeapi.utils import make_iterable
 from robot.api import logger
 from robot.utils import ConnectionCache
-from version import VERSION
+from .version import VERSION
 import re
+import sys
+
+# Python3 compatible magic
+if sys.version_info[0] == 3:
+    unicode = str
+    basestring = (str, bytes)
 
 
 class AristaLibrary(object):
@@ -266,7 +272,7 @@ class AristaLibrary(object):
         | Log             | First switch connected to port ${switch_info[0]['port']} |      |
         """
         return_value = list()
-        for indx, values in self.connections.items():
+        for indx, values in list(self.connections.items()):
             return_value.append(values)
         return return_value
 
@@ -603,7 +609,7 @@ class AristaLibrary(object):
         if out['encoding'] == 'json':
             extensions = out['result']['extensions']
             filtered = []
-            for ext, data in extensions.items():
+            for ext, data in list(extensions.items()):
                 if available and data['presence'] != 'present':
                     continue
                 elif not available and data['presence'] == 'present':

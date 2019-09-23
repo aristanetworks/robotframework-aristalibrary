@@ -615,7 +615,7 @@ class AristaLibrary(object):
                 elif not available and data['presence'] == 'present':
                     continue
 
-                if installed and data['status'] is not 'installed':
+                if installed and data['status'] != 'installed':
                     continue
                 elif installed == "forced" and data['status'] != \
                         'forceInstalled':

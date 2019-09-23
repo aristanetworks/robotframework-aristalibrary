@@ -857,7 +857,7 @@ class Expect(object):
                 )
         elif isinstance(returned, list):
             # If we have a list, fail if the match value is not in the list
-            regex = re.compile("\s*{}".format(match))
+            regex = re.compile(r"\s*{}".format(match))
             matches = [m.group(0) for line in returned for m in
                        [regex.search(line)] if m]
             if not matches:

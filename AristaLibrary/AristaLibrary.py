@@ -35,7 +35,7 @@ from pyeapi.eapilib import CommandError
 from pyeapi.utils import make_iterable
 from robot.api import logger
 from robot.utils import ConnectionCache
-from version import VERSION
+from .version import VERSION
 import re
 
 
@@ -266,7 +266,7 @@ class AristaLibrary(object):
         | Log             | First switch connected to port ${switch_info[0]['port']} |      |
         """
         return_value = list()
-        for indx, values in self.connections.items():
+        for indx, values in list(self.connections.items()):
             return_value.append(values)
         return return_value
 
@@ -298,12 +298,12 @@ class AristaLibrary(object):
         | ${json_dict}= | Run Cmds | show version                |               |
         | ${raw_text}=  | Run Cmds | show interfaces description | encoding=text |
         """
-        if isinstance(commands, basestring):
+        if isinstance(commands, str):
             commands = [str(commands)]
         elif isinstance(commands, list):
             # Handle Python2 unicode strings
             for idx, command in enumerate(commands):
-                if isinstance(command, unicode):
+                if isinstance(command, str):
                     commands[idx] = str(command)
 
         try:
@@ -351,12 +351,12 @@ class AristaLibrary(object):
         | @{commands}=  | show version | show interfaces Ethernet 1  |               |
         | ${json_dict}= | Run Commands | ${commands}                 |               |
         """
-        if isinstance(commands, basestring):
+        if isinstance(commands, str):
             commands = [str(commands)]
         elif isinstance(commands, list):
             # Handle Python2 unicode strings
             for idx, command in enumerate(commands):
-                if isinstance(command, unicode):
+                if isinstance(command, str):
                     commands[idx] = str(command)
 
         try:
@@ -394,12 +394,12 @@ class AristaLibrary(object):
         | ${enable}=        | Enable      | ${list_v}    |               |
         """
 
-        if isinstance(commands, basestring):
+        if isinstance(commands, str):
             commands = [str(commands)]
         elif isinstance(commands, list):
             # Handle Python2 unicode strings
             for idx, command in enumerate(commands):
-                if isinstance(command, unicode):
+                if isinstance(command, str):
                     commands[idx] = str(command)
 
         try:
@@ -498,7 +498,7 @@ class AristaLibrary(object):
         | ${config}=        | Config      | ${commands}  |               |
         """
 
-        if isinstance(commands, basestring):
+        if isinstance(commands, str):
             commands = [commands]
 
         try:
@@ -603,13 +603,13 @@ class AristaLibrary(object):
         if out['encoding'] == 'json':
             extensions = out['result']['extensions']
             filtered = []
-            for ext, data in extensions.items():
+            for ext, data in list(extensions.items()):
                 if available and data['presence'] != 'present':
                     continue
                 elif not available and data['presence'] == 'present':
                     continue
 
-                if installed and data['status'] is not 'installed':
+                if installed and data['status'] != 'installed':
                     continue
                 elif installed == "forced" and data['status'] != \
                         'forceInstalled':
